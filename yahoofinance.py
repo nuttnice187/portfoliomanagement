@@ -9,7 +9,7 @@ def get_daily_yf(symbols: Union[str|List[str]], start: Optional[datetime]=None,
         end: datetime.datetime= datetime.today()
     if not start:
         start: datetime.datetime= end - timedelta(days=2*365)
-    if not isinstance(symbols, List[str]):
+    if not isinstance(symbols, list):
         symbols: List[str]= [symbols]
     res_df = pd.DataFrame()
     for s in symbols:

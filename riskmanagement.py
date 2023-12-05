@@ -9,8 +9,8 @@ class EfficientFrontierModel:
     sigma: float
     def __init__(self, adjusted_close: pd.DataFrame):
         self.percent_change = adjusted_close.pct_change()
-        self.mean_returns = percent_change.mean()
-        self.covariance_matrix = percent_change.cov()
+        self.mean_returns = self.percent_change.mean()
+        self.covariance_matrix = self.percent_change.cov()
     def get_portfolio_performance(self, weights, trading_days: int=252):
         self.returns = np.sum(self.mean_returns*weights)*trading_days
         self.sigma = np.sqrt(np.dot(weights.T, np.dot(self.covariance_matrix, weights))

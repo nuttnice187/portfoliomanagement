@@ -14,5 +14,5 @@ def get_daily_yf(symbols: Union[str|List[str]], start: Optional[datetime]=None,
     res_df = pd.DataFrame()
     for s in symbols:
         symbol_df: pd.DataFrame= yf.download(s, start=start, end=end)
-        df[s] = symbol_df[column]        
+        res_df[s] = symbol_df[column]        
     return res_df

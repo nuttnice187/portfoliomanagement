@@ -13,6 +13,6 @@ def get_daily_yf(symbols: Union[str|List[str]], start: Optional[datetime.datetim
         symbols: List[str]= [symbols]
     res_df = pd.DataFrame()
     for s in symbols:
-        symbol_df = yf.download(s, start=start_date, end=end_date)
+        symbol_df: pd.DataFrame= yf.download(s, start=start_date, end=end_date)
         df[s] = symbol_df[column]        
     return res_df

@@ -3,8 +3,8 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import List, Union, Optional
 
-def get_daily_yf(symbols: Union[str|List[str]], start: Optional[datetime.datetime]=None,
-    end: Optional[datetime.datetime]=None, column: str='Adj Close') -> pd.DataFrame:
+def get_daily_yf(symbols: Union[str|List[str]], start: Optional[datetime]=None,
+    end: Optional[datetime]=None, column: str='Adj Close') -> pd.DataFrame:
     if not end:
         end: datetime.datetime= datetime.today()
     if not start:

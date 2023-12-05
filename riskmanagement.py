@@ -2,7 +2,7 @@ import pandas as pd
 
 class EfficientFrontierModel:
     returns: pd.DataFrame
-    mean_returns: pd.DataFrame
+    mean_returns: pd.Series
     covariance_matrix: pd.DataFrame
     def __init__(self, adjusted_close: pd.DataFrame):
         self.returns = adjusted_close.pct_change()

@@ -19,7 +19,6 @@ def get_neg_sharpe_ratio(weights: npt.NDArray[np.float64],
     return - (returns_p - risk_free_rate) / std_dev_p
 
 class EfficientFrontierModel:
-    percent_change: pd.DataFrame
     mean_returns: pd.Series
     cov_matrix: pd.DataFrame
     risk_free_rate: float

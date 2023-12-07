@@ -28,11 +28,11 @@ class EfficientFrontierModel:
     def __init__(self, adjusted_close: pd.DataFrame, risk_free_rate: float=0.04
         ) -> None:
         self.trading_days, self.asset_len = adjusted_close.shape
-        self.percent_change = adjusted_close.pct_change()
-        self.mean_returns = self.percent_change.mean()
-        self.cov_matrix = self.percent_change.cov()
+        percent_change = adjusted_close.pct_change()
+        self.mean_returns = percent_change.mean()
+        self.cov_matrix = percent_change.cov()
         self.risk_free_rate = risk_free_rate
-    def get_max_sharpe_ratio(self, weight_limit: Tuple[float, float]=(0, 1)
+    def get_optimal_portfolio(self, weight_limit: Tuple[float, float]=(0, 1)
         ) -> None:
         constraints: Dict[str, Union[str, function]]= {"type": 'eq',
             "fun": lambda x: np.sum(x) - 1}

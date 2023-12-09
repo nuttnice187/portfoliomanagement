@@ -53,8 +53,7 @@ class EfficientFrontierModel:
             ('Maximum Sharpe Ratio: {:.2}'
                  .format(-self.max_sharpe_ratio_portfolio.fun),
                  self.max_sharpe_ratio_portfolio),
-            ('Minimum Risk'.format(self.min_risk_portfolio.fun),
-                self.min_risk_portfolio))
+            ('Minimum Risk', self.min_risk_portfolio))
         res: List= []
         for description, optimization_result in portfolios:
             res.append(description)

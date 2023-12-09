@@ -17,6 +17,14 @@ def get_neg_sharpe_ratio(weights: npt.NDArray[np.float64],
     returns_p = get_returns_p(weights, mean_returns, trading_days)
     std_dev_p = get_std_dev_p(weights, cov_matrix, trading_days)
     return - (returns_p - risk_free_rate) / std_dev_p
+def get_portfolio_weight_allocation(symbols: List[str],
+    portfolio: OptimizeResult) -> Dict[str, float]:
+    res: Dict[str, float]= {symbols[0]: portfolio.x[0]}
+    for i in range(1, len(symbols)):
+        s = symbols[i]
+        weight = portfolio.x[i]
+        res[s] = weight
+    return res
 
 class EfficientFrontierModel:
     mean_returns: pd.Series

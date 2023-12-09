@@ -25,6 +25,7 @@ class EfficientFrontierModel:
     trading_days: int
     asset_len: int
     max_sharpe_ratio_portfolio: OptimizeResult
+    min_risk_portfolio: OptimizeResult
     def __init__(self, adjusted_close: pd.DataFrame, risk_free_rate: float=0.04
         ) -> None:
         self.trading_days, self.asset_len = adjusted_close.shape

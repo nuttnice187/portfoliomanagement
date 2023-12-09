@@ -17,7 +17,7 @@ def get_neg_sharpe_ratio(weights: NDArray[np.float64], mean_returns: pd.Series,
     returns_p = get_returns_p(weights, mean_returns, trading_days)
     std_dev_p = get_std_dev_p(weights, cov_matrix, trading_days)
     return - (returns_p - risk_free_rate) / std_dev_p
-def get_portfolio_weight_allocation(symbols: List[str],
+def get_portfolio_weight_allocation(symbols: Union[List[str], pd.Index],
     portfolio: OptimizeResult) -> Dict[str, str]:
     res = {symbols[0]: "{:.2%}".format(portfolio.x[0])}
     for i in range(1, len(symbols)):
@@ -27,6 +27,7 @@ def get_portfolio_weight_allocation(symbols: List[str],
     return res
 
 class EfficientFrontierModel:
+    symbols: pd.Index
     mean_returns: pd.Series
     cov_matrix: pd.DataFrame
     risk_free_rate: float
@@ -36,6 +37,7 @@ class EfficientFrontierModel:
     min_risk_portfolio: OptimizeResult
     def __init__(self, adjusted_close: pd.DataFrame, risk_free_rate: float=0.04
         ) -> None:
+        self.symbols = adjusted_close.columns
         self.trading_days, self.asset_len = adjusted_close.shape
         percent_change = adjusted_close.pct_change()
         self.mean_returns = percent_change.mean()
@@ -46,6 +48,23 @@ class EfficientFrontierModel:
                 self.trading_days, self.risk_free_rate))
         self.min_risk_portfolio = self.__get_optimal_portfolio(*(get_std_dev_p,
             self.cov_matrix, self.trading_days))
+    def __repr__(self) -> str:
+        portfolios: Tuple[Tuple[str, NDArray[np.float]]]= (
+            ('Maximum Sharpe Ratio Portfolio', self.max_sharpe_ratio_portfolio)
+            ('Minimum Risk Portfolio', self.min_risk_portfolio))
+        res = []
+        for description, optimization_result in portfolios:
+            res.append(description)
+            res.append('Returns: {:.2%}'.format(get_returns_p(
+                optimization_result.x, self.mean_returns, self.trading_days)))
+            res.append('Volatility: {:.2%}'.format(get_std_dev_p(
+                optimization_result.x, self.cov_matrix, self.trading_days)))
+            res.append('Weight Allocation:')
+            for k, v in get_portfolio_weight_allocation(self.symbols,
+                optimization_result).items():
+                res.append('    {}: {}'.format(k, v))
+            res.append('\n')
+        return '\n'.join(res)
     def __get_optimal_portfolio(self, fun: Union[
             Callable[[NDArray[np.float64], pd.DataFrame, int], float],
             Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],

@@ -7,7 +7,7 @@ from scipy.optimize import minimize, OptimizeResult
 def get_returns_p(weights: npt.NDArray[np.float64],
     mean_returns: pd.Series, trading_days: int) -> float:
     return np.sum(mean_returns*weights)*trading_days
-def get_std_dev_p(weights: npt.NDArray[np.float64],cov_matrix: pd.DataFrame,
+def get_std_dev_p(weights: npt.NDArray[np.float64], cov_matrix: pd.DataFrame,
     trading_days: int) -> float:
     return np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))*np.sqrt(
         trading_days)
@@ -35,7 +35,9 @@ class EfficientFrontierModel:
         self.max_sharpe_ratio_portfolio = self.__get_optimal_portfolio(
             *(get_neg_sharpe_ratio, self.mean_returns, self.cov_matrix,
                 self.trading_days, self.risk_free_rate))
-    def __get_optimal_portfolio(self, fun, *args,
+        self.min_risk_portfolio = self.__get_optimal_portfolio(*(get_std_dev_p,
+            self.cov_matrix, self.trading_days))
+    def __get_optimal_portfolio(self, fun: Callable, *args,
         weight_limit: Tuple[float, float]=(0, 1)) -> OptimizeResult:
         constraints: Dict[str, Union[str, function]]= {"type": 'eq',
             "fun": lambda x: np.sum(x) - 1}

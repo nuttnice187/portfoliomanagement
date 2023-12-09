@@ -50,7 +50,8 @@ class EfficientFrontierModel:
             Callable[[NDArray[np.float64], pd.DataFrame, int], float],
             Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],
                 float]],
-        *args, weight_limit: Tuple[float, float]=(0, 1)) -> OptimizeResult:
+        *args: Union[pd.Series, pd.DataFrame, int, float],
+        weight_limit: Tuple[float, float]=(0, 1)) -> OptimizeResult:
         constraints: Dict[str, Union[str, function]]= {"type": 'eq',
             "fun": lambda x: np.sum(x) - 1}
         bounds: Tuple[Tuple[float, float]]= tuple(

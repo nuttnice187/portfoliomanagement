@@ -50,14 +50,16 @@ class EfficientFrontierModel:
             self.cov_matrix, self.trading_days))
     def __repr__(self) -> str:
         portfolios: Tuple[Tuple[str, NDArray[np.float]]]= (
-            ('Maximum Sharpe Ratio: {}'.format(-self.max_sharpe_ratio_portfolio.fun), self.max_sharpe_ratio_portfolio),
-            ('Minimum Risk: {}'.format(self.min_risk_portfolio.fun), self.min_risk_portfolio))
+            ('Maximum Sharpe Ratio: {:.2}'.format(
+                -self.max_sharpe_ratio_portfolio.fun), self.max_sharpe_ratio_portfolio),
+            ('Minimum Risk'.format(self.min_risk_portfolio.fun),
+                self.min_risk_portfolio))
         res = []
         for description, optimization_result in portfolios:
             res.append(description)
             res.append('Returns: {:.2%}'.format(get_returns_p(
                 optimization_result.x, self.mean_returns, self.trading_days)))
-            res.append('Volatility: {:.2%}'.format(get_std_dev_p(
+            res.append('Risk Volatility: {:.2%}'.format(get_std_dev_p(
                 optimization_result.x, self.cov_matrix, self.trading_days)))
             res.append('Weight Allocation:')
             for k, v in get_portfolio_weight_allocation(self.symbols,

@@ -14,7 +14,7 @@ def get_std_dev_p(weights: npt.NDArray[np.float64],cov_matrix: pd.DataFrame,
 def get_neg_sharpe_ratio(weights: npt.NDArray[np.float64],
     mean_returns: pd.Series, cov_matrix: pd.DataFrame, trading_days: int,
     risk_free_rate: float) -> float:
-    returns_p = get_returns_p(weights, mean_returns, trading_days),
+    returns_p = get_returns_p(weights, mean_returns, trading_days)
     std_dev_p = get_std_dev_p(weights, cov_matrix, trading_days)
     return - (returns_p - risk_free_rate) / std_dev_p
 

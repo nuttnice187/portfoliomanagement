@@ -42,6 +42,5 @@ class EfficientFrontierModel:
         bounds: Tuple[Tuple[float, float]]= tuple(
             weight_limit for i in range(self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]
-        self.max_sharpe_ratio_portfolio = minimize(fun,
-            initial_weights, args=args, method='SLSQP', bounds=bounds,
-            constraints=constraints)
+        return minimize(fun, initial_weights, args=args, method='SLSQP',
+            bounds=bounds, constraints=constraints)

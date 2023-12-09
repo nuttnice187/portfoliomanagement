@@ -23,7 +23,7 @@ def get_portfolio_weight_allocation(symbols: List[str],
     for i in range(1, len(symbols)):
         s = symbols[i]
         weight = portfolio.x[i]
-        res[s] = "{:.0%}".format(weight)
+        res[s] = "{:.2%}".format(weight)
     return res
 
 class EfficientFrontierModel:

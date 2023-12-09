@@ -6,9 +6,9 @@ from typing import List, Union, Optional
 def get_daily_yf(symbols: Union[str|List[str]], start: Optional[datetime]=None,
     end: Optional[datetime]=None, column: str='Adj Close') -> pd.DataFrame:
     if not end:
-        end: datetime.datetime= datetime.today()
+        end: datetime= datetime.today()
     if not start:
-        start: datetime.datetime= end - timedelta(days=365)
+        start: datetime= end - timedelta(days=365)
     if not isinstance(symbols, list):
         symbols: List[str]= [symbols]
     res_df = pd.DataFrame()

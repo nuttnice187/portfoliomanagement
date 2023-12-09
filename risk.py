@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Callable
 from scipy.optimize import minimize, OptimizeResult
 
 def get_returns_p(weights: npt.NDArray[np.float64],
@@ -35,7 +35,7 @@ class EfficientFrontierModel:
         self.max_sharpe_ratio_portfolio = self.__get_optimal_portfolio(
             get_neg_sharpe_ratio, (self.mean_returns, self.cov_matrix,
                 self.trading_days, self.risk_free_rate))
-    def __get_optimal_portfolio(self, fun: function, *args,
+    def __get_optimal_portfolio(self, fun: Callable, *args,
         weight_limit: Tuple[float, float]=(0, 1)) -> OptimizeResult:
         constraints: Dict[str, Union[str, function]]= {"type": 'eq',
             "fun": lambda x: np.sum(x) - 1}

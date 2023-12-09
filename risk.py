@@ -46,8 +46,11 @@ class EfficientFrontierModel:
                 self.trading_days, self.risk_free_rate))
         self.min_risk_portfolio = self.__get_optimal_portfolio(*(get_std_dev_p,
             self.cov_matrix, self.trading_days))
-    def __get_optimal_portfolio(self, fun: Callable, *args,
-        weight_limit: Tuple[float, float]=(0, 1)) -> OptimizeResult:
+    def __get_optimal_portfolio(self, fun: Union[
+            Callable[[npt.NDArray[np.float64], pd.DataFrame, int], float],
+            Callable[[npt.NDArray[np.float64], pd.Series, pd.DataFrame, int,
+                float], float]],
+        *args, weight_limit: Tuple[float, float]=(0, 1)) -> OptimizeResult:
         constraints: Dict[str, Union[str, function]]= {"type": 'eq',
             "fun": lambda x: np.sum(x) - 1}
         bounds: Tuple[Tuple[float, float]]= tuple(

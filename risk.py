@@ -32,15 +32,16 @@ class EfficientFrontierModel:
         self.mean_returns = percent_change.mean()
         self.cov_matrix = percent_change.cov()
         self.risk_free_rate = risk_free_rate
-        self.__get_optimal_portfolio()
-    def __get_optimal_portfolio(self, weight_limit: Tuple[float, float]=(0, 1)
-        ) -> None:
+        self.max_sharpe_ratio_portfolio = self.__get_optimal_portfolio(
+            get_neg_sharpe_ratio, (self.mean_returns, self.cov_matrix,
+                self.trading_days, self.risk_free_rate))
+    def __get_optimal_portfolio(self, fun: function, *args,
+        weight_limit: Tuple[float, float]=(0, 1)) -> OptimizeResult:
         constraints: Dict[str, Union[str, function]]= {"type": 'eq',
             "fun": lambda x: np.sum(x) - 1}
         bounds: Tuple[Tuple[float, float]]= tuple(
             weight_limit for i in range(self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]
-        self.max_sharpe_ratio_portfolio = minimize(get_neg_sharpe_ratio,
-            initial_weights, args=(self.mean_returns, self.cov_matrix,
-                self.trading_days, self.risk_free_rate),
-            method='SLSQP', bounds=bounds, constraints=constraints)
+        self.max_sharpe_ratio_portfolio = minimize(fun,
+            initial_weights, args=args, method='SLSQP', bounds=bounds,
+            constraints=constraints)

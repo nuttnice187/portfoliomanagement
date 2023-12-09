@@ -50,7 +50,7 @@ class EfficientFrontierModel:
             self.cov_matrix, self.trading_days))
     def __repr__(self) -> str:
         portfolios: Tuple[Tuple[str, NDArray[np.float]]]= (
-            ('Maximum Sharpe Ratio Portfolio', self.max_sharpe_ratio_portfolio)
+            ('Maximum Sharpe Ratio Portfolio', self.max_sharpe_ratio_portfolio),
             ('Minimum Risk Portfolio', self.min_risk_portfolio))
         res = []
         for description, optimization_result in portfolios:

@@ -1,29 +1,29 @@
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 import pandas as pd
 from typing import Dict, List, Tuple, Union, Callable
 from scipy.optimize import minimize, OptimizeResult
 
-def get_returns_p(weights: npt.NDArray[np.float64],
-    mean_returns: pd.Series, trading_days: int) -> float:
+def get_returns_p(weights: NDArray[np.float64], mean_returns: pd.Series,
+    trading_days: int) -> float:
     return np.sum(mean_returns*weights)*trading_days
-def get_std_dev_p(weights: npt.NDArray[np.float64], cov_matrix: pd.DataFrame,
+def get_std_dev_p(weights: NDArray[np.float64], cov_matrix: pd.DataFrame,
     trading_days: int) -> float:
     return np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))*np.sqrt(
         trading_days)
-def get_neg_sharpe_ratio(weights: npt.NDArray[np.float64],
-    mean_returns: pd.Series, cov_matrix: pd.DataFrame, trading_days: int,
-    risk_free_rate: float) -> float:
+def get_neg_sharpe_ratio(weights: NDArray[np.float64], mean_returns: pd.Series,
+    cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float
+    ) -> float:
     returns_p = get_returns_p(weights, mean_returns, trading_days)
     std_dev_p = get_std_dev_p(weights, cov_matrix, trading_days)
     return - (returns_p - risk_free_rate) / std_dev_p
 def get_portfolio_weight_allocation(symbols: List[str],
-    portfolio: OptimizeResult) -> Dict[str, float]:
-    res: Dict[str, float]= {symbols[0]: portfolio.x[0]}
+    portfolio: OptimizeResult) -> Dict[str, str]:
+    res = {symbols[0]: "{:.2%}".format(portfolio.x[0])}
     for i in range(1, len(symbols)):
         s = symbols[i]
         weight = portfolio.x[i]
-        res[s] = weight
+        res[s] = "{:.2%}".format(weight)
     return res
 
 class EfficientFrontierModel:
@@ -47,10 +47,11 @@ class EfficientFrontierModel:
         self.min_risk_portfolio = self.__get_optimal_portfolio(*(get_std_dev_p,
             self.cov_matrix, self.trading_days))
     def __get_optimal_portfolio(self, fun: Union[
-            Callable[[npt.NDArray[np.float64], pd.DataFrame, int], float],
-            Callable[[npt.NDArray[np.float64], pd.Series, pd.DataFrame, int,
-                float], float]],
-        *args, weight_limit: Tuple[float, float]=(0, 1)) -> OptimizeResult:
+            Callable[[NDArray[np.float64], pd.DataFrame, int], float],
+            Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],
+                float]],
+        *args: Union[pd.Series, pd.DataFrame, int, float],
+        weight_limit: Tuple[float, float]=(0, 1)) -> OptimizeResult:
         constraints: Dict[str, Union[str, function]]= {"type": 'eq',
             "fun": lambda x: np.sum(x) - 1}
         bounds: Tuple[Tuple[float, float]]= tuple(

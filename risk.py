@@ -4,18 +4,20 @@ import pandas as pd
 from typing import Dict, List, Tuple, Union
 from scipy.optimize import minimize, OptimizeResult
 
-def get_portfolio_performance(weights: npt.NDArray[np.float64],
-    mean_returns: pd.Series, cov_matrix: pd.DataFrame, trading_days: int
-    ) -> Tuple[float, float]:
+def get_returns_p(weights: npt.NDArray[np.float64],
+    mean_returns: pd.Series, trading_days: int) -> float:
     returns_p: float= np.sum(mean_returns*weights)*trading_days
+    return returns_p
+def get_std_dev_p(weights: npt.NDArray[np.float64],cov_matrix: pd.DataFrame,
+    trading_days: int) -> float:
     std_dev_p: float= np.sqrt(np.dot(weights.T, np.dot(cov_matrix,
         weights)))*np.sqrt(trading_days)
-    return returns_p, std_dev_p
+    return std_dev_p
 def get_neg_sharpe_ratio(weights: npt.NDArray[np.float64],
     mean_returns: pd.Series, cov_matrix: pd.DataFrame, trading_days: int,
     risk_free_rate: float) -> float:
-    returns_p, std_dev_p = get_portfolio_performance(weights, mean_returns,
-        cov_matrix, trading_days)
+    returns_p = get_returns_p(weights, mean_returns, trading_days),
+    std_dev_p = get_std_dev_p(weights, cov_matrix, trading_days)
     return - (returns_p - risk_free_rate) / std_dev_p
 
 class EfficientFrontierModel:

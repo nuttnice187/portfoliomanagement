@@ -19,7 +19,7 @@ def get_neg_sharpe_ratio(weights: NDArray[np.float64], mean_returns: pd.Series,
     return - (returns_p - risk_free_rate) / std_dev_p
 def get_portfolio_weight_allocation(symbols: List[str],
     portfolio: OptimizeResult) -> Dict[str, str]:
-    res = {symbols[0]: portfolio.x[0]}
+    res = {symbols[0]: "{:.2%}".format(portfolio.x[0])}
     for i in range(1, len(symbols)):
         s = symbols[i]
         weight = portfolio.x[i]

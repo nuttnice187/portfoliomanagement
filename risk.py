@@ -45,11 +45,12 @@ class EfficientFrontierModel:
         self.cov_matrix = percent_change.cov()
         self.risk_free_rate = risk_free_rate
         self.bound = bound
+        weight_constraints = {"type": 'eq', "fun": lambda x: np.sum(x) - 1}
         self.max_sharpe_ratio_portfolio = self.__get_optimal_portfolio(*(
-            get_neg_sharpe_ratio, self.mean_returns, self.cov_matrix,
-            self.trading_days, self.risk_free_rate))
+            get_neg_sharpe_ratio, weight_constraints, self.mean_returns,
+            self.cov_matrix, self.trading_days, self.risk_free_rate))
         self.min_risk_portfolio = self.__get_optimal_portfolio(*(get_std_dev_p,
-            self.cov_matrix, self.trading_days))
+            weight_constraints, self.cov_matrix, self.trading_days))
     def __repr__(self) -> str:
         portfolios: Tuple[Tuple[str, OptimizeResult]]= (
             ('Maximum Sharpe Ratio: {:.2}'
@@ -71,10 +72,8 @@ class EfficientFrontierModel:
     def __get_optimal_portfolio(self, fun: Union[
             Callable[[NDArray[np.float64], pd.DataFrame, int], float],
             Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],
-                float]],
+                float]], constraints: Dict[str, Union[str, function]],
         *args: Union[pd.Series, pd.DataFrame, int, float]) -> OptimizeResult:
-        constraints: Dict[str, Union[str, function]]= {"type": 'eq',
-            "fun": lambda x: np.sum(x) - 1}
         bounds: Tuple[Tuple[float, float]]= tuple(
             self.bound for i in range(self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]

@@ -78,7 +78,7 @@ class EfficientFrontierModel:
         weights_constraints = {"type": 'eq', "fun": lambda x: np.sum(x) - 1}
         if 'target_return' in kwargs:
             return_p_constraints = {"type": 'eq',
-                "fun": lambda x: fun(x, *args) - kwargs['target_return']}
+                "fun": lambda x: get_returns_p(x, self.mean_returns, self.trading_days) - kwargs['target_return']}
             constraints = (return_p_constraints, weights_constraints)
         else:
             constraints = weights_constraints

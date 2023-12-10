@@ -72,7 +72,7 @@ class EfficientFrontierModel:
     def __get_optimal_portfolio(self, fun: Union[
             Callable[[NDArray[np.float64], pd.DataFrame, int], float],
             Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],
-                float]], constraints: Dict[str, Union[str, function]],
+                float]], constraints: Dict[str, Union[str, Callable]],
         *args: Union[pd.Series, pd.DataFrame, int, float]) -> OptimizeResult:
         bounds: Tuple[Tuple[float, float]]= tuple(
             self.bound for i in range(self.asset_len))

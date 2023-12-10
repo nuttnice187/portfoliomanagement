@@ -55,18 +55,18 @@ class EfficientFrontierModel:
             ('Maximum Sharpe Ratio: {:.2}'
                  .format(-self.max_sharpe_ratio_portfolio.fun),
                  self.max_sharpe_ratio_portfolio),
-            ('Minimum Risk', self.min_risk_portfolio))
+            ('Minimum Risk:', self.min_risk_portfolio))
         res: List= []
         for description, optimization_result in portfolios:
             res.append(description)
-            res.append('Returns: {:.2%}'.format(get_returns_p(
+            res.append('    Returns: {:.2%}'.format(get_returns_p(
                 optimization_result.x, self.mean_returns, self.trading_days)))
-            res.append('Risk Volatility: {:.2%}'.format(get_std_dev_p(
+            res.append('    Risk Volatility: {:.2%}'.format(get_std_dev_p(
                 optimization_result.x, self.cov_matrix, self.trading_days)))
-            res.append('Weight Allocation:')
+            res.append('    Weight Allocation:')
             for k, v in get_portfolio_weight_allocation(self.symbols,
                 optimization_result).items():
-                res.append('    {}: {}'.format(k, v))
+                res.append('        {}: {}'.format(k, v))
         return '\n'.join(res)
     def __get_optimal_portfolio(self, fun: Union[
             Callable[[NDArray[np.float64], pd.DataFrame, int], float],

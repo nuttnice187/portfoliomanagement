@@ -45,9 +45,9 @@ class EfficientFrontierModel:
         self.cov_matrix = percent_change.cov()
         self.risk_free_rate = risk_free_rate
         self.bound = bound
-        self.max_sharpe_ratio_portfolio = self.__get_optimal_portfolio(
-            *(get_neg_sharpe_ratio, self.mean_returns, self.cov_matrix,
-                self.trading_days, self.risk_free_rate))
+        self.max_sharpe_ratio_portfolio = self.__get_optimal_portfolio(*(
+            get_neg_sharpe_ratio, self.mean_returns, self.cov_matrix,
+            self.trading_days, self.risk_free_rate))
         self.min_risk_portfolio = self.__get_optimal_portfolio(*(get_std_dev_p,
             self.cov_matrix, self.trading_days))
     def __repr__(self) -> str:

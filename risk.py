@@ -22,8 +22,8 @@ def get_portfolio_weight_allocation(symbols: Union[List[str], pd.Index],
     res = {symbols[0]: "{:.2%}".format(portfolio.x[0])}
     for i in range(1, len(symbols)):
         s = symbols[i]
-        weight = portfolio.x[i]
-        res[s] = "{:.2%}".format(weight)
+        weight = "{:.2%}".format(portfolio.x[i])
+        res[s] = weight
     return res
 
 class EfficientFrontierModel:
@@ -35,14 +35,16 @@ class EfficientFrontierModel:
     asset_len: int
     max_sharpe_ratio_portfolio: OptimizeResult
     min_risk_portfolio: OptimizeResult
-    def __init__(self, adjusted_close: pd.DataFrame, risk_free_rate: float=0.04
-        ) -> None:
+    bound: Tuple[float, float]
+    def __init__(self, adjusted_close: pd.DataFrame, risk_free_rate: float=0.04,
+        bound: Tuple[float, float]=(0, 1)) -> None:
         self.symbols = adjusted_close.columns
         self.trading_days, self.asset_len = adjusted_close.shape
         percent_change = adjusted_close.pct_change()
         self.mean_returns = percent_change.mean()
         self.cov_matrix = percent_change.cov()
         self.risk_free_rate = risk_free_rate
+        self.bound = bound
         self.max_sharpe_ratio_portfolio = self.__get_optimal_portfolio(
             *(get_neg_sharpe_ratio, self.mean_returns, self.cov_matrix,
                 self.trading_days, self.risk_free_rate))
@@ -53,30 +55,28 @@ class EfficientFrontierModel:
             ('Maximum Sharpe Ratio: {:.2}'
                  .format(-self.max_sharpe_ratio_portfolio.fun),
                  self.max_sharpe_ratio_portfolio),
-            ('Minimum Risk'.format(self.min_risk_portfolio.fun),
-                self.min_risk_portfolio))
+            ('Minimum Risk:', self.min_risk_portfolio))
         res: List= []
         for description, optimization_result in portfolios:
             res.append(description)
-            res.append('Returns: {:.2%}'.format(get_returns_p(
+            res.append('    Returns: {:.2%}'.format(get_returns_p(
                 optimization_result.x, self.mean_returns, self.trading_days)))
-            res.append('Risk Volatility: {:.2%}'.format(get_std_dev_p(
+            res.append('    Risk Volatility: {:.2%}'.format(get_std_dev_p(
                 optimization_result.x, self.cov_matrix, self.trading_days)))
-            res.append('Weight Allocation:')
+            res.append('    Weight Allocation:')
             for k, v in get_portfolio_weight_allocation(self.symbols,
                 optimization_result).items():
-                res.append('    {}: {}'.format(k, v))
+                res.append('        {}: {}'.format(k, v))
         return '\n'.join(res)
     def __get_optimal_portfolio(self, fun: Union[
             Callable[[NDArray[np.float64], pd.DataFrame, int], float],
             Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],
                 float]],
-        *args: Union[pd.Series, pd.DataFrame, int, float],
-        weight_limit: Tuple[float, float]=(0, 1)) -> OptimizeResult:
+        *args: Union[pd.Series, pd.DataFrame, int, float]) -> OptimizeResult:
         constraints: Dict[str, Union[str, function]]= {"type": 'eq',
             "fun": lambda x: np.sum(x) - 1}
         bounds: Tuple[Tuple[float, float]]= tuple(
-            weight_limit for i in range(self.asset_len))
+            self.bound for i in range(self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]
         return minimize(fun, initial_weights, args=args, method='SLSQP',
             bounds=bounds, constraints=constraints)

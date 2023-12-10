@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
-from typing import Dict, List, Tuple, Union, Callable
+from typing import Callable, Dict, List, Optional, Tuple, Union
 from scipy.optimize import minimize, OptimizeResult
 
 def get_returns_p(weights: NDArray[np.float64], mean_returns: pd.Series,
@@ -26,6 +26,7 @@ def get_weight_allocation(symbols: Union[List[str], pd.Index],
         res[s] = weight
     return res
 
+
 class EfficientFrontierModel:
     symbols: pd.Index
     mean_returns: pd.Series
@@ -45,10 +46,10 @@ class EfficientFrontierModel:
         self.cov_matrix = percent_change.cov()
         self.risk_free_rate = risk_free_rate
         self.bound = bound
-        self.max_sharpe_ratio_portfolio = self.__get_optimal_portfolio(*(
+        self.max_sharpe_ratio_portfolio = self.get_optimal_portfolio(*(
             get_neg_sharpe_ratio, self.mean_returns, self.cov_matrix,
             self.trading_days, self.risk_free_rate))
-        self.min_risk_portfolio = self.__get_optimal_portfolio(*(get_std_dev_p,
+        self.min_risk_portfolio = self.get_optimal_portfolio(*(get_std_dev_p,
             self.cov_matrix, self.trading_days))
     def __repr__(self) -> str:
         portfolios: Tuple[Tuple[str, OptimizeResult]]= (
@@ -68,13 +69,24 @@ class EfficientFrontierModel:
                 ).items():
                 res.append('        {}: {}'.format(k, v))
         return '\n'.join(res)
-    def __get_optimal_portfolio(self, fun: Union[
+    def get_optimal_portfolio(self, fun: Union[
             Callable[[NDArray[np.float64], pd.DataFrame, int], float],
             Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],
                 float]],
-        *args: Union[pd.Series, pd.DataFrame, int, float]) -> OptimizeResult:
-        constraints: Dict[str, Union[str, function]]= {"type": 'eq',
+        *args: Union[pd.Series, pd.DataFrame, int, float], **kwargs: float
+        ) -> OptimizeResult:        
+        weights_constraints: Dict[str, Union[str, Callable]] = {"type": 'eq',
             "fun": lambda x: np.sum(x) - 1}
+        if 'target_return' in kwargs:
+            return_p_constraints: Dict[str, Union[str, Callable]]= {
+                "type": 'eq', "fun": lambda x: get_returns_p(x,
+                    self.mean_returns, self.trading_days) - kwargs[
+                        'target_return']}
+            constraints: Tuple[Dict[str, Union[str, Callable]],
+                Dict[str, Union[str, Callable]]]= (return_p_constraints,
+                    weights_constraints)
+        else:
+            constraints: Dict[str, Union[str, Callable]]= weights_constraints
         bounds: Tuple[Tuple[float, float]]= tuple(
             self.bound for i in range(self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]

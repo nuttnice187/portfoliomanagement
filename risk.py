@@ -22,8 +22,8 @@ def get_portfolio_weight_allocation(symbols: Union[List[str], pd.Index],
     res = {symbols[0]: "{:.2%}".format(portfolio.x[0])}
     for i in range(1, len(symbols)):
         s = symbols[i]
-        weight = portfolio.x[i]
-        res[s] = "{:.2%}".format(weight)
+        weight = "{:.2%}".format(portfolio.x[i])
+        res[s] = weight
     return res
 
 class EfficientFrontierModel:

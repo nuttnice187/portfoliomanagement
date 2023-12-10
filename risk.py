@@ -64,8 +64,8 @@ class EfficientFrontierModel:
             res.append('    Risk Volatility: {:.2%}'.format(get_std_dev_p(
                 optimization_result.x, self.cov_matrix, self.trading_days)))
             res.append('    Weight Allocation:')
-            for k, v in get_weight_allocation(self.symbols,
-                optimization_result).items():
+            for k, v in get_weight_allocation(self.symbols, optimization_result
+                ).items():
                 res.append('        {}: {}'.format(k, v))
         return '\n'.join(res)
     def __get_optimal_portfolio(self, fun: Union[

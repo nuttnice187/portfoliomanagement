@@ -105,30 +105,34 @@ class EfficientFrontier:
     def __get_frontier_returns(self, n: int=20) -> NDArray:
         return np.linspace(self.min_risk_p.p_return, self.max_sharpe_p.p_return,
             n)
-    def __get_frontier_std_devs(self, frontier_returns: NDArray[np.float64]):
-        frontier_std_devs = []
+    def __get_frontier_std_devs_hover_text(self, frontier_returns: NDArray[np.float64]):
+        frontier_std_devs, hover_text = [], []
         for r in frontier_returns:
             portfolio: Portfolio= self.get_optimal_portfolio(*(get_std_dev_p,
                     self.cov_matrix, self.trading_days),
                 **{'target_return': r})
             frontier_std_devs.append(portfolio.std_dev)
-        return frontier_std_devs
+            hover_text.append(portfolio.__repr__(sep='<br>')
+        return frontier_std_devs, hover_text
     def __plot_frontier_curve(self) -> Figure:
         frontier_returns = self.__get_frontier_returns()
+        frontier_std_devs, frontier_hovertexts = (self
+            .__get_frontier_std_devs_hover_text(frontier_returns))
         max_sharpe_ratio_marker = Scatter(name='Maximum Sharpe Ratio',
             mode='markers', x=[self.max_sharpe_p.std_dev],
             y=[self.max_sharpe_p.p_return], marker={"color": 'red', "size": 14,
                 "line": {"width": 3, "color": 'black'}},
-                hovertext=self.max_sharpe_p.__repr__(sep='<br>'))
+            hovertext=self.max_sharpe_p.__repr__(sep='<br>'))
         min_std_dev_marker = Scatter(name='Minimum Standard Deviation',
             mode='markers', x=[self.min_risk_p.std_dev],
             y=[self.min_risk_p.p_return], marker={"color": 'green', "size": 14,
                 "line": {"width": 3, "color": 'black'}},
-                hovertext=self.min_risk_p.__repr__(sep='<br>'))
+            hovertext=self.min_risk_p.__repr__(sep='<br>'))
         frontier_curve = Scatter(name='Efficient Frontier', mode='lines', 
-            x=self.__get_frontier_std_devs(frontier_returns),
+            x=frontier_std_devs,
             y=frontier_returns, line={"width": 4, "color": 'black',
-                "dash": 'dashdot'})
+                "dash": 'dashdot'},
+            hovertext=frontier_hovertexts)
         data = [max_sharpe_ratio_marker, min_std_dev_marker, frontier_curve]
         layout = Layout(title='Portfolio Optimization', yaxis={
                 "title": 'Return', "tickformat": ',.0%'},

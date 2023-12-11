@@ -36,7 +36,7 @@ class Portfolio:
         cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float):
         self.returns = get_returns_p(weights, mean_returns, trading_days)
         self.std_dev = get_std_dev_p(weights, cov_matrix, trading_days)
-        self.sharpe_ratio = (self.returns_p - risk_free_rate) / self.std_dev_p
+        self.sharpe_ratio = (self.returns - risk_free_rate) / self.std_dev
         self.weights = weights
         self.symbols = mean_returns.index
     def __repr__(self):

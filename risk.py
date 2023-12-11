@@ -56,8 +56,8 @@ class EfficientFrontier:
     risk_free_rate: float
     trading_days: int
     asset_len: int
-    max_sharpe_ratio_portfolio: OptimizeResult
-    min_risk_portfolio: OptimizeResult
+    max_sharpe_p: Portfolio
+    min_risk_p: Portfolio
     bound: Tuple[float, float]
     fig: Figure
     def __init__(self, adjusted_close: pd.DataFrame, risk_free_rate: float=0.04,
@@ -105,7 +105,9 @@ class EfficientFrontier:
     def __get_frontier_returns(self, n: int=20) -> NDArray:
         return np.linspace(self.min_risk_p.p_return, self.max_sharpe_p.p_return,
             n)
-    def __get_frontier_std_devs_hover_text(self, frontier_returns: NDArray[np.float64]):
+    def __get_frontier_std_devs_hover_text(self,
+        frontier_returns: NDArray[np.float64]
+        ) -> Tuple[List[float], List[float]]:
         frontier_std_devs, hover_text = [], []
         for r in frontier_returns:
             portfolio: Portfolio= self.get_optimal_portfolio(*(get_std_dev_p,

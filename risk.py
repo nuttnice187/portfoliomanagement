@@ -33,7 +33,7 @@ class Portfolio:
         self.sharpe_ratio = (self.p_return - risk_free_rate) / self.std_dev
         self.weights = weights
         self.symbols = mean_returns.index
-    def __repr__(self) -> str:
+    def __repr__(self, sep: str='\n') -> str:
         res = []
         res.append('    Returns: {:.2%}'.format(self.p_return))
         res.append('    Standard Deviation: {:.2%}'.format(self.std_dev))
@@ -41,7 +41,7 @@ class Portfolio:
         res.append('    Weight Allocation:')
         for k, v in self.get_weight_allocation().items():
             res.append('        {}: {:.2%}'.format(k, v))
-        return '\n'.join(res)
+        return sep.join(res)
     def get_weight_allocation(self) -> Dict[str, float]:        
         res = {self.symbols[0]: self.weights[0]}
         for i in range(1, len(self.symbols)):
@@ -119,12 +119,12 @@ class EfficientFrontier:
             mode='markers', x=[self.max_sharpe_p.std_dev],
             y=[self.max_sharpe_p.p_return], marker={"color": 'red', "size": 14,
                 "line": {"width": 3, "color": 'black'}},
-                hovertext=self.max_sharpe_p.get_weight_allocation())
+                hovertext=self.max_sharpe_p.__repr__(sep='<br>'))
         min_std_dev_marker = Scatter(name='Minimum Standard Deviation',
             mode='markers', x=[self.min_risk_p.std_dev],
             y=[self.min_risk_p.p_return], marker={"color": 'green', "size": 14,
                 "line": {"width": 3, "color": 'black'}},
-                hovertext=self.min_risk_p.get_weight_allocation())
+                hovertext=self.min_risk_p.__repr__(sep='<br>'))
         frontier_curve = Scatter(name='Efficient Frontier', mode='lines', 
             x=self.__get_frontier_std_devs(frontier_returns),
             y=frontier_returns, line={"width": 4, "color": 'black',

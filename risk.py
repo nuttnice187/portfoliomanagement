@@ -38,8 +38,7 @@ class Portfolio:
         res.append('    Standard Deviation: {:.2%}'.format(self.std_dev))
         res.append('    Sharpe Ratio: {:.2}'.format(self.sharpe_ratio))
         res.append('    Weight Allocation:')
-        for k, v in get_weight_allocation(self.symbols, self.weights
-            ).items():
+        for k, v in self.get_weight_allocation().items():
             res.append('        {}: {:.2%}'.format(k, v))
         return '\n'.join(res)
     def get_weight_allocation(self) -> Dict[str, float]:        

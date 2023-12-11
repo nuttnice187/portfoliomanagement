@@ -19,7 +19,7 @@ def get_neg_sharpe_ratio(weights: NDArray[np.float64], mean_returns: pd.Series,
     return - (returns_p - risk_free_rate) / std_dev_p
 
 class Portfolio:
-    return: float
+    p_return: float
     std_dev: float
     sharpe_ratio: float
     weights: NDArray[np.float64]
@@ -27,14 +27,14 @@ class Portfolio:
     def __init__(self, weights: NDArray[np.float64], mean_returns: pd.Series, 
         cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float
         ) -> None:
-        self.return = get_return_p(weights, mean_returns, trading_days)
+        self.p_return = get_return_p(weights, mean_returns, trading_days)
         self.std_dev = get_std_dev_p(weights, cov_matrix, trading_days)
-        self.sharpe_ratio = (self.returns - risk_free_rate) / self.std_dev
+        self.sharpe_ratio = (self.p_return - risk_free_rate) / self.std_dev
         self.weights = weights
         self.symbols = mean_returns.index
     def __repr__(self) -> str:
         res = []
-        res.append('    Returns: {:.2%}'.format(self.returns))
+        res.append('    Returns: {:.2%}'.format(self.p_return))
         res.append('    Standard Deviation: {:.2%}'.format(self.std_dev))
         res.append('    Sharpe Ratio: {:.2}'.format(self.sharpe_ratio))
         res.append('    Weight Allocation:')

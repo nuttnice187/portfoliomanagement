@@ -118,11 +118,13 @@ class EfficientFrontier:
         max_sharpe_ratio_marker = Scatter(name='Maximum Sharpe Ratio',
             mode='markers', x=[self.max_sharpe_p.std_dev],
             y=[self.max_sharpe_p.p_return], marker={"color": 'red', "size": 14,
-                "line": {"width": 3, "color": 'black'}})
+                "line": {"width": 3, "color": 'black'}},
+                hovertext=self.max_sharpe_p.__repr__())
         min_std_dev_marker = Scatter(name='Minimum Standard Deviation',
             mode='markers', x=[self.min_risk_p.std_dev],
             y=[self.min_risk_p.p_return], marker={"color": 'green', "size": 14,
-                "line": {"width": 3, "color": 'black'}})
+                "line": {"width": 3, "color": 'black'}},
+                hovertext=self.min_risk_p.__repr__())
         frontier_curve = Scatter(name='Efficient Frontier', mode='lines', 
             x=self.__get_frontier_std_devs(frontier_returns),
             y=frontier_returns, line={"width": 4, "color": 'black',

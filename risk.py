@@ -1,6 +1,7 @@
 import numpy as np
-from numpy.typing import NDArray
 import pandas as pd
+from numpy.typing import NDArray
+from plotly.graph_objects import Scatter, Layout, Figure
 from typing import Callable, Dict, List, Optional, Tuple, Union
 from scipy.optimize import minimize, OptimizeResult
 
@@ -58,6 +59,7 @@ class EfficientFrontier:
     max_sharpe_ratio_portfolio: OptimizeResult
     min_risk_portfolio: OptimizeResult
     bound: Tuple[float, float]
+    fig: Figure
     def __init__(self, adjusted_close: pd.DataFrame, risk_free_rate: float=0.04,
         bound: Tuple[float, float]=(0, 1)) -> None:
         self.trading_days, self.asset_len = adjusted_close.shape
@@ -71,6 +73,7 @@ class EfficientFrontier:
             self.trading_days, self.risk_free_rate))
         self.min_risk_p = self.get_optimal_portfolio(*(get_std_dev_p,
             self.cov_matrix, self.trading_days))
+        self.fig = self.__plot_frontier_curve()
     def __repr__(self) -> str:
         portfolios: Tuple[Tuple[str, Portfolio]]= (
             ('Maximum Sharpe Ratio:', self.max_sharpe_p),
@@ -99,3 +102,36 @@ class EfficientFrontier:
             bounds=bounds, constraints=constraints)
         return Portfolio(opt_res.x, self.mean_returns, self.cov_matrix,
             self.trading_days, self.risk_free_rate)
+    def __get_frontier_returns(self, n: int=20) -> NDArray:
+        return np.linspace(self.min_risk_p.p_return, self.max_sharpe_p.p_return,
+            n)
+    def __get_frontier_std_devs(self, frontier_returns: NDArray[np.float64]):
+        frontier_std_devs = []
+        for r in frontier_returns:
+            portfolio: Portfolio= self.get_optimal_portfolio(*(get_std_dev_p,
+                    self.cov_matrix, self.trading_days),
+                **{'target_return': r})
+            frontier_std_devs.append(portfolio.std_dev)
+        return frontier_std_devs
+    def __plot_frontier_curve(self) -> Figure:
+        frontier_returns = self.__get_frontier_returns()
+        max_sharpe_ratio_marker = Scatter(name='Maximum Sharpe Ratio',
+            mode='markers', x=[self.max_sharpe_p.std_dev],
+            y=[self.max_sharpe_p.p_return], marker={"color": 'red', "size": 14,
+                "line": {"width": 3, "color": 'black'}})
+        min_std_dev_marker = Scatter(name='Minimum Standard Deviation',
+            mode='markers', x=[self.min_risk_p.std_dev],
+            y=[self.min_risk_p.p_return], marker={"color": 'green', "size": 14,
+                "line": {"width": 3, "color": 'black'}})
+        frontier_curve = Scatter(name='Efficient Frontier', mode='lines', 
+            x=self.__get_frontier_std_devs(frontier_returns),
+            y=frontier_returns, line={"width": 4, "color": 'black',
+                "dash": 'dashdot'})
+        data = [max_sharpe_ratio_marker, min_std_dev_marker, frontier_curve]
+        layout = Layout(title='Portfolio Optimization', yaxis={
+                "title": 'Return', "tickformat": ',.0%'},
+            xaxis={"title": 'Standard Deviation', "tickformat": ',.0%'},
+            showlegend=True, legend={"x": .75, "y": 0, "traceorder": 'normal',
+                "bgcolor": '#E2E2E2', "bordercolor": 'black', "borderwidth": 2}, 
+            width=800, height=600)
+        return Figure(data=data, layout=layout)

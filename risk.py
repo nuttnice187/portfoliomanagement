@@ -75,18 +75,13 @@ class EfficientFrontierModel:
                 float]],
         *args: Union[pd.Series, pd.DataFrame, int, float], **kwargs: float
         ) -> OptimizeResult:        
-        weights_constraints: Dict[str, Union[str, Callable]] = {"type": 'eq',
-            "fun": lambda x: np.sum(x) - 1}
+        weights_constraints = {"type": 'eq', "fun": lambda x: np.sum(x) - 1}
         if 'target_return' in kwargs:
-            return_p_constraints: Dict[str, Union[str, Callable]]= {
-                "type": 'eq', "fun": lambda x: get_returns_p(x,
-                    self.mean_returns, self.trading_days) - kwargs[
-                        'target_return']}
-            constraints: Tuple[Dict[str, Union[str, Callable]],
-                Dict[str, Union[str, Callable]]]= (return_p_constraints,
-                    weights_constraints)
+            return_p_constraints = {"type": 'eq',
+                "fun": lambda x: get_returns_p(x, self.mean_returns, self.trading_days) - kwargs['target_return']}
+            constraints = (return_p_constraints, weights_constraints)
         else:
-            constraints: Dict[str, Union[str, Callable]]= weights_constraints
+            constraints = weights_constraints
         bounds: Tuple[Tuple[float, float]]= tuple(
             self.bound for i in range(self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]

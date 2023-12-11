@@ -41,14 +41,13 @@ class Portfolio:
         self.symbols = mean_returns.index
     def __repr__(self):
         res = []
-        for s in self.symbols:
-            res.append('    Returns: {:.2%}'.format(self.returns))
-            res.append('    Standard Deviation: {:.2%}'.format(self.std_dev))
-            res.append('    Sharpe Ratio: {:.2}'.format(self.sharpe_ratio))
-            res.append('    Weight Allocation:')
-            for k, v in get_weight_allocation(self.symbols, self.weights
-                ).items():
-                res.append('        {}: {}'.format(k, v))
+        res.append('    Returns: {:.2%}'.format(self.returns))
+        res.append('    Standard Deviation: {:.2%}'.format(self.std_dev))
+        res.append('    Sharpe Ratio: {:.2}'.format(self.sharpe_ratio))
+        res.append('    Weight Allocation:')
+        for k, v in get_weight_allocation(self.symbols, self.weights
+            ).items():
+            res.append('        {}: {}'.format(k, v))
         return '\n'.join(res)
 
 class EfficientFrontier:

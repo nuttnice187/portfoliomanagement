@@ -89,17 +89,25 @@ class EfficientFrontier:
                 float]],
         *args: Union[pd.Series, pd.DataFrame, int, float], **kwargs: float
         ) -> Portfolio:        
-        constraints = {"type": 'eq', "fun": lambda x: np.sum(x) - 1}
+        constraints: Dict[str, 
+            Union[str, Callable[[NDArray[np.float64]], float]]]= {
+                "type": 'eq', "fun": lambda x: np.sum(x) - 1}
         if 'target_return' in kwargs and kwargs['target_return']:
-            return_p_constraints = {"type": 'eq',
-                "fun": lambda x: get_return_p(x, self.mean_returns,
+            return_p_constraints: Dict[str, 
+                Union[str, Callable[[NDArray[np.float64]], float]]]= {
+                "type": 'eq', "fun": lambda x: get_return_p(x, self.mean_returns,
                     self.trading_days) - kwargs['target_return']}
-            constraints = (return_p_constraints, constraints)
+            constraints: Tuple[
+                    Dict[str, Union[str, Callable[[NDArray[np.float64]],
+                        float]]],
+                    Dict[str, Union[str, Callable[[NDArray[np.float64]],
+                        float]]]
+                ]= (return_p_constraints, constraints)
         bounds: Tuple[Tuple[float, float]]= tuple(
             self.bound for i in range(self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]
-        opt_res = minimize(fun, initial_weights, args=args, method='SLSQP',
-            bounds=bounds, constraints=constraints)
+        opt_res: OptimizeResult= minimize(fun, initial_weights, args=args,
+            method='SLSQP', bounds=bounds, constraints=constraints)
         return Portfolio(opt_res.x, self.mean_returns, self.cov_matrix,
             self.trading_days, self.risk_free_rate)
     def __get_frontier_returns(self, n: int=20) -> NDArray:
@@ -117,7 +125,7 @@ class EfficientFrontier:
             hover_text.append(portfolio.__repr__(sep='<br>'))
         return frontier_std_devs, hover_text
     def __plot_frontier_curve(self) -> Figure:
-        frontier_returns = self.__get_frontier_returns()
+        frontier_returns: NDArray= self.__get_frontier_returns()
         frontier_std_devs, frontier_hovertexts = (self
             .__get_frontier_std_devs_hover_text(frontier_returns))
         max_sharpe_ratio_marker = Scatter(name='Maximum Sharpe Ratio',
@@ -135,7 +143,8 @@ class EfficientFrontier:
             y=frontier_returns, line={"width": 4, "color": 'black',
                 "dash": 'dashdot'},
             hovertext=frontier_hovertexts)
-        data = [max_sharpe_ratio_marker, min_std_dev_marker, frontier_curve]
+        data: List[Scatter]= [max_sharpe_ratio_marker, min_std_dev_marker,
+            frontier_curve]
         layout = Layout(title='Portfolio Optimization', yaxis={
                 "title": 'Return', "tickformat": ',.0%'},
             xaxis={"title": 'Standard Deviation', "tickformat": ',.0%'},

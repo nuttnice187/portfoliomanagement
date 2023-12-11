@@ -4,7 +4,7 @@ import pandas as pd
 from typing import Callable, Dict, List, Optional, Tuple, Union
 from scipy.optimize import minimize, OptimizeResult
 
-def get_returns_p(weights: NDArray[np.float64], mean_returns: pd.Series,
+def get_return_p(weights: NDArray[np.float64], mean_returns: pd.Series,
     trading_days: int) -> float:
     return np.sum(mean_returns*weights)*trading_days
 def get_std_dev_p(weights: NDArray[np.float64], cov_matrix: pd.DataFrame,
@@ -14,12 +14,12 @@ def get_std_dev_p(weights: NDArray[np.float64], cov_matrix: pd.DataFrame,
 def get_neg_sharpe_ratio(weights: NDArray[np.float64], mean_returns: pd.Series,
     cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float
     ) -> float:
-    returns_p = get_returns_p(weights, mean_returns, trading_days)
+    returns_p = get_return_p(weights, mean_returns, trading_days)
     std_dev_p = get_std_dev_p(weights, cov_matrix, trading_days)
     return - (returns_p - risk_free_rate) / std_dev_p
 
 class Portfolio:
-    returns: float
+    return: float
     std_dev: float
     sharpe_ratio: float
     weights: NDArray[np.float64]
@@ -27,7 +27,7 @@ class Portfolio:
     def __init__(self, weights: NDArray[np.float64], mean_returns: pd.Series, 
         cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float
         ) -> None:
-        self.returns = get_returns_p(weights, mean_returns, trading_days)
+        self.return = get_return_p(weights, mean_returns, trading_days)
         self.std_dev = get_std_dev_p(weights, cov_matrix, trading_days)
         self.sharpe_ratio = (self.returns - risk_free_rate) / self.std_dev
         self.weights = weights
@@ -89,7 +89,7 @@ class EfficientFrontier:
         constraints = {"type": 'eq', "fun": lambda x: np.sum(x) - 1}
         if 'target_return' in kwargs and kwargs['target_return']:
             return_p_constraints = {"type": 'eq',
-                "fun": lambda x: get_returns_p(x, self.mean_returns,
+                "fun": lambda x: get_return_p(x, self.mean_returns,
                     self.trading_days) - kwargs['target_return']}
             constraints = (return_p_constraints, constraints)
         bounds: Tuple[Tuple[float, float]]= tuple(

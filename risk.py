@@ -17,14 +17,6 @@ def get_neg_sharpe_ratio(weights: NDArray[np.float64], mean_returns: pd.Series,
     returns_p = get_returns_p(weights, mean_returns, trading_days)
     std_dev_p = get_std_dev_p(weights, cov_matrix, trading_days)
     return - (returns_p - risk_free_rate) / std_dev_p
-def get_weight_allocation(symbols: Union[List[str], pd.Index],
-    weights: NDArray[np.float64]) -> Dict[str, str]:
-    res = {symbols[0]: "{:.2%}".format(weights[0])}
-    for i in range(1, len(symbols)):
-        s = symbols[i]
-        weight = "{:.2%}".format(weights[i])
-        res[s] = weight
-    return res
 
 class Portfolio:
     returns: float
@@ -33,13 +25,14 @@ class Portfolio:
     weights: NDArray[np.float64]
     symbols: pd.Index
     def __init__(self, weights: NDArray[np.float64], mean_returns: pd.Series, 
-        cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float):
+        cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float
+        ) -> None:
         self.returns = get_returns_p(weights, mean_returns, trading_days)
         self.std_dev = get_std_dev_p(weights, cov_matrix, trading_days)
         self.sharpe_ratio = (self.returns - risk_free_rate) / self.std_dev
         self.weights = weights
         self.symbols = mean_returns.index
-    def __repr__(self):
+    def __repr__(self) -> str:
         res = []
         res.append('    Returns: {:.2%}'.format(self.returns))
         res.append('    Standard Deviation: {:.2%}'.format(self.std_dev))
@@ -49,6 +42,13 @@ class Portfolio:
             ).items():
             res.append('        {}: {}'.format(k, v))
         return '\n'.join(res)
+    def get_weight_allocation(self) -> Dict[str, str]:        
+        res = {self.symbols[0]: "{:.2%}".format(self.weights[0])}
+        for i in range(1, len(self.symbols)):
+            s = self.symbols[i]
+            weight = "{:.2%}".format(self.weights[i])
+            res[s] = weight
+        return res
 
 class EfficientFrontier:
     mean_returns: pd.Series

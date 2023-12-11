@@ -139,9 +139,8 @@ class EfficientFrontier:
                 "line": {"width": 3, "color": 'black'}},
             hovertext=self.min_risk_p.__repr__(sep='<br>'))
         frontier_curve = Scatter(name='Efficient Frontier', mode='lines', 
-            x=frontier_std_devs,
-            y=frontier_returns, line={"width": 4, "color": 'black',
-                "dash": 'dashdot'},
+            x=frontier_std_devs, y=frontier_returns, line={"width": 4,
+                "color": 'black', "dash": 'dashdot'},
             hovertext=frontier_hovertexts)
         data: List[Scatter]= [max_sharpe_ratio_marker, min_std_dev_marker,
             frontier_curve]

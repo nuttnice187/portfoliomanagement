@@ -112,7 +112,7 @@ class EfficientFrontier:
                     self.cov_matrix, self.trading_days),
                 **{'target_return': r})
             frontier_std_devs.append(portfolio.std_dev)
-            hover_text.append(portfolio.__repr__(sep='<br>')
+            hover_text.append(portfolio.__repr__(sep='<br>'))
         return frontier_std_devs, hover_text
     def __plot_frontier_curve(self) -> Figure:
         frontier_returns = self.__get_frontier_returns()

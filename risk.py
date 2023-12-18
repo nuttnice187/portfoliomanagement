@@ -142,12 +142,19 @@ class EfficientFrontier:
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
         min_risk: Optional[bool]=None) -> Portfolio:
         c = {"type": 'eq', "fun": lambda x: np.sum(x) - 1}
-        if target_return:
-            return_p_constraints = {"type": 'eq',
-                "fun": lambda x: get_return_p(x, self.mean_returns,
-                    self.trading_days) - target_return}
-            c = (return_p_constraints, c)
-        if max_sharpe:
+        return_p_constraint = {"type": 'eq',
+            "fun": lambda x: get_return_p(x, self.mean_returns,
+                self.trading_days) - target_return}
+        std_dev_constraint = {"type": 'eq',
+            "fun": lambda x: get_std_dev_p(x, self.cov_matrix,
+                self.trading_days) - target_std_dev}
+        if target_return and target_std_dev:
+            c = (c, return_p_constraint, std_dev_constraint)
+        elif target_return:
+            c = (return_p_constraint, c)
+        elif target_std_dev:
+            c = (std_dev_constraint, c)
+        if max_sharpe or target_std_dev:
             portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
                 get_neg_sharpe_ratio, c, self.mean_returns,
                 self.cov_matrix, self.trading_days, self.risk_free_rate))

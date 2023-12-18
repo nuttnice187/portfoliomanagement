@@ -141,21 +141,18 @@ class EfficientFrontier:
     def predict(self, target_return: Optional[float]=None, 
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
         min_risk: Optional[bool]=None) -> Portfolio:
-        constraints = {"type": 'eq', "fun": lambda x: np.sum(x) - 1}
+        c = {"type": 'eq', "fun": lambda x: np.sum(x) - 1}
         if target_return:
             return_p_constraints = {"type": 'eq',
                 "fun": lambda x: get_return_p(x, self.mean_returns,
                     self.trading_days) - target_return}
-            constraints = (return_p_constraints, constraints)
-            portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
-                get_std_dev_p, constraints, self.cov_matrix, self.trading_days)
-                )
+            c = (return_p_constraints, c)
         if max_sharpe:
             portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
-                get_neg_sharpe_ratio, constraints, self.mean_returns,
+                get_neg_sharpe_ratio, c, self.mean_returns,
                 self.cov_matrix, self.trading_days, self.risk_free_rate))
-        if min_risk:
+        else:
             portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
-                get_std_dev_p, constraints, self.cov_matrix, self.trading_days)
+                get_std_dev_p, c, self.cov_matrix, self.trading_days)
                 )
         return portfolio_res

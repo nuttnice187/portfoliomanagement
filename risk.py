@@ -68,10 +68,10 @@ class EfficientFrontier:
         self.cov_matrix = percent_change.cov()
         self.risk_free_rate = risk_free_rate
         self.bound = bound
-        self.max_sharpe_p = self.get_optimal_portfolio(*(
+        self.max_sharpe_p = self.__get_optimal_portfolio(*(
             get_neg_sharpe_ratio, self.mean_returns, self.cov_matrix,
             self.trading_days, self.risk_free_rate))
-        self.min_risk_p = self.get_optimal_portfolio(*(get_std_dev_p,
+        self.min_risk_p = self.__get_optimal_portfolio(*(get_std_dev_p,
             self.cov_matrix, self.trading_days))
         self.fig = self.__plot_frontier_curve()
     def __repr__(self) -> str:
@@ -83,7 +83,7 @@ class EfficientFrontier:
             res.append(description)
             res.append(p.__repr__())
         return '\n'.join(res)
-    def get_optimal_portfolio(self, fun: Union[
+    def __get_optimal_portfolio(self, fun: Union[
             Callable[[NDArray[np.float64], pd.DataFrame, int], float],
             Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],
                 float]],
@@ -118,9 +118,7 @@ class EfficientFrontier:
         ) -> Tuple[List[float], List[float]]:
         frontier_std_devs, hover_text = [], []
         for r in frontier_returns:
-            portfolio: Portfolio= self.get_optimal_portfolio(*(get_std_dev_p,
-                    self.cov_matrix, self.trading_days),
-                **{'target_return': r})
+            portfolio = self.predict(target_return=r)
             frontier_std_devs.append(portfolio.std_dev)
             hover_text.append(portfolio.__repr__(sep='<br>'))
         return frontier_std_devs, hover_text
@@ -151,3 +149,10 @@ class EfficientFrontier:
                 "bgcolor": '#E2E2E2', "bordercolor": 'black', "borderwidth": 2}, 
             width=800, height=600)
         return Figure(data=data, layout=layout)
+    def predict(self, target_return: Optional[float]=None, 
+        target_std_dev: Optional[float]=None) -> Portfolio:
+        if target_return:
+            portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
+                get_std_dev_p, self.cov_matrix, self.trading_days),
+            **{'target_return': target_return})
+        return portfolio_res

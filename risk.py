@@ -68,11 +68,8 @@ class EfficientFrontier:
         self.cov_matrix = percent_change.cov()
         self.risk_free_rate = risk_free_rate
         self.bound = bound
-        self.max_sharpe_p = self.__get_optimal_portfolio(*(
-            get_neg_sharpe_ratio, self.mean_returns, self.cov_matrix,
-            self.trading_days, self.risk_free_rate))
-        self.min_risk_p = self.__get_optimal_portfolio(*(get_std_dev_p,
-            self.cov_matrix, self.trading_days))
+        self.max_sharpe_p = self.predict(max_sharpe=True)
+        self.min_risk_p = self.predict(min_risk=True)
         self.fig = self.__plot_frontier_curve()
     def __repr__(self) -> str:
         portfolios: Tuple[Tuple[str, Portfolio]]= (
@@ -87,22 +84,9 @@ class EfficientFrontier:
             Callable[[NDArray[np.float64], pd.DataFrame, int], float],
             Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],
                 float]],
+        constraints: Tuple[Dict],
         *args: Union[pd.Series, pd.DataFrame, int, float], **kwargs: float
-        ) -> Portfolio:        
-        constraints: Dict[str, 
-            Union[str, Callable[[NDArray[np.float64]], float]]]= {
-                "type": 'eq', "fun": lambda x: np.sum(x) - 1}
-        if 'target_return' in kwargs and kwargs['target_return']:
-            return_p_constraints: Dict[str, 
-                Union[str, Callable[[NDArray[np.float64]], float]]]= {
-                "type": 'eq', "fun": lambda x: get_return_p(x, self.mean_returns,
-                    self.trading_days) - kwargs['target_return']}
-            constraints: Tuple[
-                    Dict[str, Union[str, Callable[[NDArray[np.float64]],
-                        float]]],
-                    Dict[str, Union[str, Callable[[NDArray[np.float64]],
-                        float]]]
-                ]= (return_p_constraints, constraints)
+        ) -> Portfolio:
         bounds: Tuple[Tuple[float, float]]= tuple(
             self.bound for i in range(self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]
@@ -150,9 +134,29 @@ class EfficientFrontier:
             width=800, height=600)
         return Figure(data=data, layout=layout)
     def predict(self, target_return: Optional[float]=None, 
-        target_std_dev: Optional[float]=None) -> Portfolio:
+        target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
+        min_risk: Optional[bool]=None) -> Portfolio:
+        constraints: Dict[str, 
+            Union[str, Callable[[NDArray[np.float64]], float]]]= {
+                "type": 'eq', "fun": lambda x: np.sum(x) - 1}
         if target_return:
+            return_p_constraints: Dict[str, 
+                Union[str, Callable[[NDArray[np.float64]], float]]]= {
+                "type": 'eq', "fun": lambda x: get_return_p(x, self.mean_returns,
+                    self.trading_days) - target_return}
+            constraints: Tuple[
+                    Dict[str, Union[str, Callable[[NDArray[np.float64]],
+                        float]]],
+                    Dict[str, Union[str, Callable[[NDArray[np.float64]],
+                        float]]]
+                ]= (return_p_constraints, constraints)
             portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
-                get_std_dev_p, self.cov_matrix, self.trading_days),
-            **{'target_return': target_return})
+                get_std_dev_p, constraints, self.cov_matrix, self.trading_days))
+        if max_sharpe:
+            portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
+                get_neg_sharpe_ratio, constraints, self.mean_returns, self.cov_matrix,
+                self.trading_days, self.risk_free_rate))
+        if min_risk:
+            portfolio_res: Portfolio = self.__get_optimal_portfolio(*(get_std_dev_p,
+                constraints, self.cov_matrix, self.trading_days))
         return portfolio_res

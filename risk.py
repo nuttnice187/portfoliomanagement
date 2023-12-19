@@ -19,6 +19,21 @@ def get_neg_sharpe_ratio(weights: NDArray[np.float64], mean_returns: pd.Series,
     std_dev_p = get_std_dev_p(weights, cov_matrix, trading_days)
     return - (returns_p - risk_free_rate) / std_dev_p
 
+class Marker:
+    name: str
+    mode: str
+    x: List[float]
+    y: List[float]
+    marker: Dict[str, Union[str, int, Dict[str, Union[int, str]]]]
+    def __init__(self, portfolio: Portfolio, color: str,
+        outline: Optional[bool]=None) -> None:
+        self.name = portfolio.name
+        self.mode = 'markers'
+        self.x, self.y = [portfolio.std_dev], [portfolio.p_return]
+        self.marker = {"color": color, "size": 14}
+        if outline:
+            self.marker["line"] = {"width": 3, "color": 'black'}
+
 class Portfolio:
     p_return: float
     std_dev: float
@@ -26,13 +41,15 @@ class Portfolio:
     weights: NDArray[np.float64]
     symbols: pd.Index
     def __init__(self, weights: NDArray[np.float64], mean_returns: pd.Series, 
-        cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float
-        ) -> None:
+        cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float,
+        name: Optional[str]=None) -> None:
         self.p_return = get_return_p(weights, mean_returns, trading_days)
         self.std_dev = get_std_dev_p(weights, cov_matrix, trading_days)
         self.sharpe_ratio = (self.p_return - risk_free_rate) / self.std_dev
         self.weights = weights
         self.symbols = mean_returns.index
+        if name:
+            self.name = name
     def __repr__(self, sep: str='\n') -> str:
         res = []
         res.append('    Returns: {:.2%}'.format(self.p_return))
@@ -91,6 +108,7 @@ class EfficientFrontier:
                     Dict[str, Union[str, Callable[[NDArray[np.float64]],
                         float]]]
                 ]],
+        name: Optional[str]=None,
         *args: Union[pd.Series, pd.DataFrame, int, float]) -> Portfolio:
         bounds: Tuple[Tuple[float, float]]= tuple(
             self.bound for i in range(self.asset_len))
@@ -98,7 +116,7 @@ class EfficientFrontier:
         opt_res: OptimizeResult= minimize(fun, initial_weights, args=args,
             method='SLSQP', bounds=bounds, constraints=constraints)
         return Portfolio(opt_res.x, self.mean_returns, self.cov_matrix,
-            self.trading_days, self.risk_free_rate)
+            self.trading_days, self.risk_free_rate, name=name)
     def __get_frontier_returns(self, n: int=20) -> NDArray:
         return np.linspace(self.min_risk_p.p_return, self.max_sharpe_p.p_return,
             n)
@@ -157,9 +175,8 @@ class EfficientFrontier:
         if max_sharpe or target_std_dev:
             portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
                 get_neg_sharpe_ratio, c, self.mean_returns,
-                self.cov_matrix, self.trading_days, self.risk_free_rate))
+                self.cov_matrix, self.trading_days, self.risk_free_rate), name='Maximum Sharpe Ratio')
         else:
             portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
-                get_std_dev_p, c, self.cov_matrix, self.trading_days)
-                )
+                get_std_dev_p, c, self.cov_matrix, self.trading_days), name='Minimum Risk')
         return portfolio_res

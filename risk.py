@@ -68,11 +68,8 @@ class EfficientFrontier:
         self.cov_matrix = percent_change.cov()
         self.risk_free_rate = risk_free_rate
         self.bound = bound
-        self.max_sharpe_p = self.get_optimal_portfolio(*(
-            get_neg_sharpe_ratio, self.mean_returns, self.cov_matrix,
-            self.trading_days, self.risk_free_rate))
-        self.min_risk_p = self.get_optimal_portfolio(*(get_std_dev_p,
-            self.cov_matrix, self.trading_days))
+        self.max_sharpe_p = self.predict(max_sharpe=True)
+        self.min_risk_p = self.predict(min_risk=True)
         self.fig = self.__plot_frontier_curve()
     def __repr__(self) -> str:
         portfolios: Tuple[Tuple[str, Portfolio]]= (
@@ -83,26 +80,18 @@ class EfficientFrontier:
             res.append(description)
             res.append(p.__repr__())
         return '\n'.join(res)
-    def get_optimal_portfolio(self, fun: Union[
+    def __get_optimal_portfolio(self, fun: Union[
             Callable[[NDArray[np.float64], pd.DataFrame, int], float],
             Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],
                 float]],
-        *args: Union[pd.Series, pd.DataFrame, int, float], **kwargs: float
-        ) -> Portfolio:        
-        constraints: Dict[str, 
-            Union[str, Callable[[NDArray[np.float64]], float]]]= {
-                "type": 'eq', "fun": lambda x: np.sum(x) - 1}
-        if 'target_return' in kwargs and kwargs['target_return']:
-            return_p_constraints: Dict[str, 
-                Union[str, Callable[[NDArray[np.float64]], float]]]= {
-                "type": 'eq', "fun": lambda x: get_return_p(x, self.mean_returns,
-                    self.trading_days) - kwargs['target_return']}
-            constraints: Tuple[
+        constraints: Union[Dict[str,
+            Union[str, Callable[[NDArray[np.float64]], float]]],Tuple[
                     Dict[str, Union[str, Callable[[NDArray[np.float64]],
                         float]]],
                     Dict[str, Union[str, Callable[[NDArray[np.float64]],
                         float]]]
-                ]= (return_p_constraints, constraints)
+                ]],
+        *args: Union[pd.Series, pd.DataFrame, int, float]) -> Portfolio:
         bounds: Tuple[Tuple[float, float]]= tuple(
             self.bound for i in range(self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]
@@ -118,9 +107,7 @@ class EfficientFrontier:
         ) -> Tuple[List[float], List[float]]:
         frontier_std_devs, hover_text = [], []
         for r in frontier_returns:
-            portfolio: Portfolio= self.get_optimal_portfolio(*(get_std_dev_p,
-                    self.cov_matrix, self.trading_days),
-                **{'target_return': r})
+            portfolio = self.predict(target_return=r)
             frontier_std_devs.append(portfolio.std_dev)
             hover_text.append(portfolio.__repr__(sep='<br>'))
         return frontier_std_devs, hover_text
@@ -148,6 +135,31 @@ class EfficientFrontier:
                 "title": 'Return', "tickformat": ',.0%'},
             xaxis={"title": 'Standard Deviation', "tickformat": ',.0%'},
             showlegend=True, legend={"x": .75, "y": 0, "traceorder": 'normal',
-                "bgcolor": '#E2E2E2', "bordercolor": 'black', "borderwidth": 2}, 
-            width=800, height=600)
+                "bgcolor": '#E2E2E2', "bordercolor": 'black', "borderwidth": 2
+                }, width=800, height=600)
         return Figure(data=data, layout=layout)
+    def predict(self, target_return: Optional[float]=None, 
+        target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
+        min_risk: Optional[bool]=None) -> Portfolio:
+        c = {"type": 'eq', "fun": lambda x: np.sum(x) - 1}
+        return_p_constraint = {"type": 'eq',
+            "fun": lambda x: get_return_p(x, self.mean_returns,
+                self.trading_days) - target_return}
+        std_dev_constraint = {"type": 'eq',
+            "fun": lambda x: get_std_dev_p(x, self.cov_matrix,
+                self.trading_days) - target_std_dev}
+        if target_return and target_std_dev:
+            c = (c, return_p_constraint, std_dev_constraint)
+        elif target_return:
+            c = (return_p_constraint, c)
+        elif target_std_dev:
+            c = (std_dev_constraint, c)
+        if max_sharpe or target_std_dev:
+            portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
+                get_neg_sharpe_ratio, c, self.mean_returns,
+                self.cov_matrix, self.trading_days, self.risk_free_rate))
+        else:
+            portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
+                get_std_dev_p, c, self.cov_matrix, self.trading_days)
+                )
+        return portfolio_res

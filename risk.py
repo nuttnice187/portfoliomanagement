@@ -19,21 +19,6 @@ def get_neg_sharpe_ratio(weights: NDArray[np.float64], mean_returns: pd.Series,
     std_dev_p = get_std_dev_p(weights, cov_matrix, trading_days)
     return - (returns_p - risk_free_rate) / std_dev_p
 
-class Marker:
-    name: str
-    mode: str
-    x: List[float]
-    y: List[float]
-    marker: Dict[str, Union[str, int, Dict[str, Union[int, str]]]]
-    def __init__(self, portfolio: Portfolio, color: str,
-        outline: Optional[bool]=None) -> None:
-        self.name = portfolio.name
-        self.mode = 'markers'
-        self.x, self.y = [portfolio.std_dev], [portfolio.p_return]
-        self.marker = {"color": color, "size": 14}
-        if outline:
-            self.marker["line"] = {"width": 3, "color": 'black'}
-
 class Portfolio:
     p_return: float
     std_dev: float
@@ -66,6 +51,63 @@ class Portfolio:
             weight = self.weights[i]
             res[s] = weight
         return res
+
+class Marker:
+    name: str
+    mode: str
+    x: List[float]
+    y: List[float]
+    marker: Dict[str, Union[str, int, Dict[str, Union[int, str]]]]
+    def __init__(self, portfolio: Portfolio, color: str,
+        outline: Optional[bool]=None) -> None:
+        self.name = portfolio.name
+        self.mode = 'markers'
+        self.x, self.y = [portfolio.std_dev], [portfolio.p_return]
+        self.marker = {"color": color, "size": 14}
+        if outline:
+            self.marker["line"] = {"width": 3, "color": 'black'}
+        self.hovertext: str= portfolio.__repr__(sep='<br>')
+
+class Lines:
+    name: str
+    mode: str
+    x: List[float]
+    y: NDArray
+    line: Dict[str, Union[int, str]]
+    hovertexts: List[str]
+    def __init__(self, x: List[float], y: NDArray, hovertexts: List[str],
+        name: str='Efficient Frontier') -> None:
+        self.name = name
+        self.mode = 'lines'
+        self.x = x
+        self.y = y
+        self.line = {"width": 4, "color": 'black', "dash": 'dashdot'}
+        self.hovertext = hovertexts
+
+class FrontierPlotlyLayout:
+    def __init__(self, title: str='Portfolio Optimization') -> None:
+        self.title = title
+        self.yaxis = {"title": 'Return', "tickformat": ',.0%'}
+        self.xaxis = {"title": 'Standard Deviation', "tickformat": ',.0%'}
+        self.showlegend = True
+        self.legend = {"x": .75, "y": 0, "traceorder": 'normal',
+            "bgcolor": '#E2E2E2', "bordercolor": 'black', "borderwidth": 2}
+        self.width = 800
+        self.height = 600
+
+class Constraints:
+    def __init__(self, mean_returns: pd.Series, cov_matrix: pd.DataFrame, 
+        trading_days: int, target_return: Optional[float]=None,
+        target_std_dev: Optional[float]=None) -> None:
+        self.weight = {"type": 'eq', "fun": lambda x: np.sum(x) - 1}
+        if target_return:
+            self.return_p = {"type": 'eq',
+                "fun": lambda x: get_return_p(x, mean_returns, trading_days
+                    ) - target_return}
+        if target_std_dev:
+            self.std_dev = {"type": 'eq',
+                "fun": lambda x: get_std_dev_p(x, cov_matrix, trading_days
+                    ) - target_std_dev}
 
 class EfficientFrontier:
     mean_returns: pd.Series
@@ -108,13 +150,16 @@ class EfficientFrontier:
                     Dict[str, Union[str, Callable[[NDArray[np.float64]],
                         float]]]
                 ]],
-        name: Optional[str]=None,
-        *args: Union[pd.Series, pd.DataFrame, int, float]) -> Portfolio:
+        *args: Union[pd.Series, pd.DataFrame, int, float], **kwargs: str
+        ) -> Portfolio:
         bounds: Tuple[Tuple[float, float]]= tuple(
             self.bound for i in range(self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]
         opt_res: OptimizeResult= minimize(fun, initial_weights, args=args,
             method='SLSQP', bounds=bounds, constraints=constraints)
+        name = None
+        if 'name' in kwargs and kwargs['name']:
+            name = kwargs['name']
         return Portfolio(opt_res.x, self.mean_returns, self.cov_matrix,
             self.trading_days, self.risk_free_rate, name=name)
     def __get_frontier_returns(self, n: int=20) -> NDArray:
@@ -122,7 +167,7 @@ class EfficientFrontier:
             n)
     def __get_frontier_std_devs_hover_text(self,
         frontier_returns: NDArray[np.float64]
-        ) -> Tuple[List[float], List[float]]:
+        ) -> Tuple[List[float], List[str]]:
         frontier_std_devs, hover_text = [], []
         for r in frontier_returns:
             portfolio = self.predict(target_return=r)
@@ -133,50 +178,28 @@ class EfficientFrontier:
         frontier_returns: NDArray= self.__get_frontier_returns()
         frontier_std_devs, frontier_hovertexts = (self
             .__get_frontier_std_devs_hover_text(frontier_returns))
-        max_sharpe_ratio_marker = Scatter(name='Maximum Sharpe Ratio',
-            mode='markers', x=[self.max_sharpe_p.std_dev],
-            y=[self.max_sharpe_p.p_return], marker={"color": 'red', "size": 14,
-                "line": {"width": 3, "color": 'black'}},
-            hovertext=self.max_sharpe_p.__repr__(sep='<br>'))
-        min_std_dev_marker = Scatter(name='Minimum Standard Deviation',
-            mode='markers', x=[self.min_risk_p.std_dev],
-            y=[self.min_risk_p.p_return], marker={"color": 'green', "size": 14,
-                "line": {"width": 3, "color": 'black'}},
-            hovertext=self.min_risk_p.__repr__(sep='<br>'))
-        frontier_curve = Scatter(name='Efficient Frontier', mode='lines', 
-            x=frontier_std_devs, y=frontier_returns, line={"width": 4,
-                "color": 'black', "dash": 'dashdot'},
-            hovertext=frontier_hovertexts)
+        max_sharpe_ratio_marker = Scatter(**Marker(self.max_sharpe_p,
+            'red', outline=True).__dict__)
+        min_std_dev_marker = Scatter(**Marker(self.min_risk_p,
+            'green', outline=True).__dict__)
+        frontier_curve = Scatter(**Lines(frontier_std_devs, frontier_returns,
+            frontier_hovertexts).__dict__)
         data: List[Scatter]= [max_sharpe_ratio_marker, min_std_dev_marker,
             frontier_curve]
-        layout = Layout(title='Portfolio Optimization', yaxis={
-                "title": 'Return', "tickformat": ',.0%'},
-            xaxis={"title": 'Standard Deviation', "tickformat": ',.0%'},
-            showlegend=True, legend={"x": .75, "y": 0, "traceorder": 'normal',
-                "bgcolor": '#E2E2E2', "bordercolor": 'black', "borderwidth": 2
-                }, width=800, height=600)
+        layout = Layout(**FrontierPlotlyLayout().__dict__)
         return Figure(data=data, layout=layout)
     def predict(self, target_return: Optional[float]=None, 
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
         min_risk: Optional[bool]=None) -> Portfolio:
-        c = {"type": 'eq', "fun": lambda x: np.sum(x) - 1}
-        return_p_constraint = {"type": 'eq',
-            "fun": lambda x: get_return_p(x, self.mean_returns,
-                self.trading_days) - target_return}
-        std_dev_constraint = {"type": 'eq',
-            "fun": lambda x: get_std_dev_p(x, self.cov_matrix,
-                self.trading_days) - target_std_dev}
-        if target_return and target_std_dev:
-            c = (c, return_p_constraint, std_dev_constraint)
-        elif target_return:
-            c = (return_p_constraint, c)
-        elif target_std_dev:
-            c = (std_dev_constraint, c)
+        c = Constraints(self.mean_returns, self.cov_matrix, self.trading_days,
+            target_return, target_std_dev).__dict__.values()
         if max_sharpe or target_std_dev:
             portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
                 get_neg_sharpe_ratio, c, self.mean_returns,
-                self.cov_matrix, self.trading_days, self.risk_free_rate), name='Maximum Sharpe Ratio')
+                self.cov_matrix, self.trading_days, self.risk_free_rate),
+                **{"name": 'Maximum Sharpe Ratio'})
         else:
             portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
-                get_std_dev_p, c, self.cov_matrix, self.trading_days), name='Minimum Risk')
+                get_std_dev_p, c, self.cov_matrix, self.trading_days),
+                **{"name": 'Minimum Risk'})
         return portfolio_res

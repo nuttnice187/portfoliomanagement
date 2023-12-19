@@ -58,6 +58,7 @@ class Marker:
     x: List[float]
     y: List[float]
     marker: Dict[str, Union[str, int, Dict[str, Union[int, str]]]]
+    hovertext: str
     def __init__(self, portfolio: Portfolio, color: str,
         outline: Optional[bool]=None) -> None:
         self.name = portfolio.name
@@ -66,7 +67,7 @@ class Marker:
         self.marker = {"color": color, "size": 14}
         if outline:
             self.marker["line"] = {"width": 3, "color": 'black'}
-        self.hovertext: str= portfolio.__repr__(sep='<br>')
+        self.hovertext = portfolio.__repr__(sep='<br>')
 
 class Lines:
     name: str
@@ -85,6 +86,13 @@ class Lines:
         self.hovertext = hovertexts
 
 class FrontierPlotlyLayout:
+    title: str
+    yaxis: Dict[str, str]
+    xaxis: Dict[str, str]
+    showlegend: bool
+    legend: Dict[str, Union[float, str, int]]
+    width: int
+    height: int
     def __init__(self, title: str='Portfolio Optimization') -> None:
         self.title = title
         self.yaxis = {"title": 'Return', "tickformat": ',.0%'}
@@ -96,6 +104,9 @@ class FrontierPlotlyLayout:
         self.height = 600
 
 class Constraints:
+    weight: Dict[str, Union[str, Callable[[NDArray], float]]]
+    return_p: Dict[str, Union[str, Callable[[NDArray], float]]]
+    std_dev: Dict[str, Union[str, Callable[[NDArray], float]]]
     def __init__(self, mean_returns: pd.Series, cov_matrix: pd.DataFrame, 
         trading_days: int, target_return: Optional[float]=None,
         target_std_dev: Optional[float]=None) -> None:
@@ -131,29 +142,18 @@ class EfficientFrontier:
         self.min_risk_p = self.predict(min_risk=True)
         self.fig = self.__plot_frontier_curve()
     def __repr__(self) -> str:
-        portfolios: Tuple[Tuple[str, Portfolio]]= (
-            ('Maximum Sharpe Ratio:', self.max_sharpe_p),
-            ('Minimum Risk:', self.min_risk_p))
+        portfolios: Tuple[Portfolio]= (self.max_sharpe_p,  self.min_risk_p)
         res: List= []
-        for description, p in portfolios:
-            res.append(description)
+        for p in portfolios:
+            res.append(p.name)
             res.append(p.__repr__())
         return '\n'.join(res)
-    def __get_optimal_portfolio(self, fun: Union[
-            Callable[[NDArray[np.float64], pd.DataFrame, int], float],
-            Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],
-                float]],
-        constraints: Union[Dict[str,
-            Union[str, Callable[[NDArray[np.float64]], float]]],Tuple[
-                    Dict[str, Union[str, Callable[[NDArray[np.float64]],
-                        float]]],
-                    Dict[str, Union[str, Callable[[NDArray[np.float64]],
-                        float]]]
-                ]],
+    def __get_optimal_portfolio(self, fun: Callable, constraints:  Tuple[Dict[
+            str, Union[str, Callable[[NDArray[np.float64]], float]]]],
         *args: Union[pd.Series, pd.DataFrame, int, float], **kwargs: str
         ) -> Portfolio:
-        bounds: Tuple[Tuple[float, float]]= tuple(
-            self.bound for i in range(self.asset_len))
+        bounds: Tuple[Tuple[float, float]]= tuple(self.bound for i in range(
+            self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]
         opt_res: OptimizeResult= minimize(fun, initial_weights, args=args,
             method='SLSQP', bounds=bounds, constraints=constraints)
@@ -163,11 +163,10 @@ class EfficientFrontier:
         return Portfolio(opt_res.x, self.mean_returns, self.cov_matrix,
             self.trading_days, self.risk_free_rate, name=name)
     def __get_frontier_returns(self, n: int=20) -> NDArray:
-        return np.linspace(self.min_risk_p.p_return, self.max_sharpe_p.p_return,
-            n)
-    def __get_frontier_std_devs_hover_text(self,
-        frontier_returns: NDArray[np.float64]
-        ) -> Tuple[List[float], List[str]]:
+        return np.linspace(self.min_risk_p.p_return,
+            self.max_sharpe_p.p_return, n)
+    def __get_frontier_std_devs_hover_text(self, frontier_returns: NDArray[
+            np.float64]) -> Tuple[List[float], List[str]]:
         frontier_std_devs, hover_text = [], []
         for r in frontier_returns:
             portfolio = self.predict(target_return=r)

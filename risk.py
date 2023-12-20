@@ -188,9 +188,11 @@ class EfficientFrontier:
         elif min_risk:
             name = 'Minimum Risk'
         return name
-    def __check_optimize_type(self, c: Tuple[Dict[str, Union[str, Callable[[
-            NDArray], float]]]], max_sharpe: Optional[bool]=None,
-        target_std_dev: Optional[float]=None, name: Optional[str]=None) -> Portfolio:
+    def __check_optimize_type(self, max_sharpe: Optional[bool]=None,
+        target_return: Optional[float]=None, target_std_dev: Optional[float]=None,
+        name: Optional[str]=None) -> Portfolio:
+        c = Constraints(self.mean_returns, self.cov_matrix, self.trading_days,
+            target_return, target_std_dev).__dict__.values()
         if max_sharpe or target_std_dev:
             res = self.__get_optimal_portfolio(*(get_neg_sharpe_ratio, c,
                     self.mean_returns, self.cov_matrix, self.trading_days,
@@ -204,8 +206,7 @@ class EfficientFrontier:
     def predict(self, target_return: Optional[float]=None, 
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
         min_risk: Optional[bool]=None, name: Optional[str]=None) -> Portfolio:
-        c = Constraints(self.mean_returns, self.cov_matrix, self.trading_days,
-            target_return, target_std_dev).__dict__.values()
         name = self.__name_portfolio(max_sharpe, min_risk, name)
-        return self.__check_optimize_type(c, max_sharpe=max_sharpe,
-            target_std_dev=target_std_dev, name=name)
+        return self.__check_optimize_type(max_sharpe=max_sharpe,
+            target_std_dev=target_std_dev, target_return=target_return,
+            name=name)

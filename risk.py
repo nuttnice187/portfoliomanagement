@@ -182,15 +182,16 @@ class EfficientFrontier:
         layout = Layout(**FrontierLayout().__dict__)
         return Figure(data=data, layout=layout)
     def __name_portfolio(self, max_sharpe: Optional[bool]=None,
-        min_risk: Optional[bool]=None, name: Optional[str]=None) -> Portfolio:
+        min_risk: Optional[bool]=None, name: Optional[str]=None) -> str:
         if max_sharpe:
             name = 'Maximum Sharpe Ratio'
         elif min_risk:
             name = 'Minimum Risk'
         return name
     def __check_optimize_type(self, max_sharpe: Optional[bool]=None,
-        target_return: Optional[float]=None, target_std_dev: Optional[float]=None,
-        name: Optional[str]=None) -> Portfolio:
+        target_return: Optional[float]=None,
+        target_std_dev: Optional[float]=None, name: Optional[str]=None
+        ) -> Portfolio:
         c = Constraints(self.mean_returns, self.cov_matrix, self.trading_days,
             target_return, target_std_dev).__dict__.values()
         if max_sharpe or target_std_dev:

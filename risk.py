@@ -25,16 +25,15 @@ class Portfolio:
     sharpe_ratio: float
     weights: NDArray[np.float64]
     symbols: pd.Index
+    name: Optional[str]
     def __init__(self, weights: NDArray[np.float64], mean_returns: pd.Series, 
         cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float,
         name: Optional[str]=None) -> None:
         self.p_return = get_return_p(weights, mean_returns, trading_days)
         self.std_dev = get_std_dev_p(weights, cov_matrix, trading_days)
         self.sharpe_ratio = (self.p_return - risk_free_rate) / self.std_dev
-        self.weights = weights
-        self.symbols = mean_returns.index
-        if name:
-            self.name = name
+        self.weights, self.symbols = weights, mean_returns.index
+        self.name = name
     def __repr__(self, sep: str='\n') -> str:
         res = []
         res.append('    Returns: {:.2%}'.format(self.p_return))
@@ -61,8 +60,7 @@ class Marker:
     hovertext: str
     def __init__(self, portfolio: Portfolio, color: str,
         outline: Optional[bool]=None) -> None:
-        self.name = portfolio.name
-        self.mode = 'markers'
+        self.name, self.mode = portfolio.name, 'markers'
         self.x, self.y = [portfolio.std_dev], [portfolio.p_return]
         self.marker = {"color": color, "size": 14}
         if outline:
@@ -78,14 +76,11 @@ class Lines:
     hovertexts: List[str]
     def __init__(self, x: List[float], y: NDArray, hovertexts: List[str],
         name: str='Efficient Frontier') -> None:
-        self.name = name
-        self.mode = 'lines'
-        self.x = x
-        self.y = y
+        self.name, self.mode, self.x, self.y = name, 'lines', x, y
         self.line = {"width": 4, "color": 'black', "dash": 'dashdot'}
         self.hovertext = hovertexts
 
-class FrontierPlotlyLayout:
+class FrontierLayout:
     title: str
     yaxis: Dict[str, str]
     xaxis: Dict[str, str]
@@ -136,8 +131,7 @@ class EfficientFrontier:
         percent_change = adjusted_close.pct_change()
         self.mean_returns = percent_change.mean()
         self.cov_matrix = percent_change.cov()
-        self.risk_free_rate = risk_free_rate
-        self.bound = bound
+        self.risk_free_rate, self.bound = risk_free_rate, bound
         self.max_sharpe_p = self.predict(max_sharpe=True)
         self.min_risk_p = self.predict(min_risk=True)
         self.fig = self.__plot_frontier_curve()
@@ -152,14 +146,14 @@ class EfficientFrontier:
             str, Union[str, Callable[[NDArray[np.float64]], float]]]],
         *args: Union[pd.Series, pd.DataFrame, int, float], **kwargs: str
         ) -> Portfolio:
+        name = None
+        if 'name' in kwargs and kwargs['name']:
+            name = kwargs['name']
         bounds: Tuple[Tuple[float, float]]= tuple(self.bound for i in range(
             self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]
         opt_res: OptimizeResult= minimize(fun, initial_weights, args=args,
             method='SLSQP', bounds=bounds, constraints=constraints)
-        name = None
-        if 'name' in kwargs and kwargs['name']:
-            name = kwargs['name']
         return Portfolio(opt_res.x, self.mean_returns, self.cov_matrix,
             self.trading_days, self.risk_free_rate, name=name)
     def __get_frontier_returns(self, n: int=20) -> NDArray:
@@ -177,28 +171,41 @@ class EfficientFrontier:
         frontier_returns: NDArray= self.__get_frontier_returns()
         frontier_std_devs, frontier_hovertexts = (self
             .__get_frontier_std_devs_hover_text(frontier_returns))
-        max_sharpe_ratio_marker = Scatter(**Marker(self.max_sharpe_p,
-            'red', outline=True).__dict__)
-        min_std_dev_marker = Scatter(**Marker(self.min_risk_p,
-            'green', outline=True).__dict__)
+        max_sharpe_ratio_marker = Scatter(**Marker(self.max_sharpe_p, 'red',
+            outline=True).__dict__)
+        min_std_dev_marker = Scatter(**Marker(self.min_risk_p, 'green',
+            outline=True).__dict__)
         frontier_curve = Scatter(**Lines(frontier_std_devs, frontier_returns,
             frontier_hovertexts).__dict__)
         data: List[Scatter]= [max_sharpe_ratio_marker, min_std_dev_marker,
             frontier_curve]
-        layout = Layout(**FrontierPlotlyLayout().__dict__)
+        layout = Layout(**FrontierLayout().__dict__)
         return Figure(data=data, layout=layout)
+    def __name_portfolio(self, max_sharpe: Optional[bool]=None,
+        min_risk: Optional[bool]=None, name: Optional[str]=None) -> Portfolio:
+        if max_sharpe:
+            name = 'Maximum Sharpe Ratio'
+        elif min_risk:
+            name = 'Minimum Risk'
+        return name
+    def __check_optimize_type(self, c: Tuple[Dict[str, Union[str, Callable[[
+            NDArray], float]]]], max_sharpe: Optional[bool]=None,
+        target_std_dev: Optional[float]=None, name: Optional[str]=None) -> Portfolio:
+        if max_sharpe or target_std_dev:
+            res = self.__get_optimal_portfolio(*(get_neg_sharpe_ratio, c,
+                    self.mean_returns, self.cov_matrix, self.trading_days,
+                    self.risk_free_rate),
+                **{"name": name})
+        else:
+            res = self.__get_optimal_portfolio(*(get_std_dev_p, c,
+                    self.cov_matrix, self.trading_days),
+                **{"name": name})
+        return res
     def predict(self, target_return: Optional[float]=None, 
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
-        min_risk: Optional[bool]=None) -> Portfolio:
+        min_risk: Optional[bool]=None, name: Optional[str]=None) -> Portfolio:
         c = Constraints(self.mean_returns, self.cov_matrix, self.trading_days,
             target_return, target_std_dev).__dict__.values()
-        if max_sharpe or target_std_dev:
-            portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
-                get_neg_sharpe_ratio, c, self.mean_returns,
-                self.cov_matrix, self.trading_days, self.risk_free_rate),
-                **{"name": 'Maximum Sharpe Ratio'})
-        else:
-            portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
-                get_std_dev_p, c, self.cov_matrix, self.trading_days),
-                **{"name": 'Minimum Risk'})
-        return portfolio_res
+        name = self.__name_portfolio(max_sharpe, min_risk, name)
+        return self.__check_optimize_type(c, max_sharpe=max_sharpe,
+            target_std_dev=target_std_dev, name=name)

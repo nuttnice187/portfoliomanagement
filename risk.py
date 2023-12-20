@@ -177,10 +177,10 @@ class EfficientFrontier:
         frontier_returns: NDArray= self.__get_frontier_returns()
         frontier_std_devs, frontier_hovertexts = (self
             .__get_frontier_std_devs_hover_text(frontier_returns))
-        max_sharpe_ratio_marker = Scatter(**Marker(self.max_sharpe_p,
-            'red', outline=True).__dict__)
-        min_std_dev_marker = Scatter(**Marker(self.min_risk_p,
-            'green', outline=True).__dict__)
+        max_sharpe_ratio_marker = Scatter(**Marker(self.max_sharpe_p, 'red',
+            outline=True).__dict__)
+        min_std_dev_marker = Scatter(**Marker(self.min_risk_p, 'green',
+            outline=True).__dict__)
         frontier_curve = Scatter(**Lines(frontier_std_devs, frontier_returns,
             frontier_hovertexts).__dict__)
         data: List[Scatter]= [max_sharpe_ratio_marker, min_std_dev_marker,
@@ -193,12 +193,12 @@ class EfficientFrontier:
         c = Constraints(self.mean_returns, self.cov_matrix, self.trading_days,
             target_return, target_std_dev).__dict__.values()
         if max_sharpe or target_std_dev:
-            portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
-                    get_neg_sharpe_ratio, c, self.mean_returns,
-                    self.cov_matrix, self.trading_days, self.risk_free_rate),
+            res = self.__get_optimal_portfolio(*(get_neg_sharpe_ratio, c,
+                    self.mean_returns, self.cov_matrix, self.trading_days,
+                    self.risk_free_rate),
                 **{"name": 'Maximum Sharpe Ratio'})
         else:
-            portfolio_res: Portfolio = self.__get_optimal_portfolio(*(
-                    get_std_dev_p, c, self.cov_matrix, self.trading_days),
+            res = self.__get_optimal_portfolio(*(get_std_dev_p, c,
+                    self.cov_matrix, self.trading_days),
                 **{"name": 'Minimum Risk'})
-        return portfolio_res
+        return res

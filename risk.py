@@ -168,17 +168,14 @@ class EfficientFrontier:
             hover_text.append(portfolio.__repr__(sep='<br>'))
         return frontier_std_devs, hover_text
     def __plot_frontier_curve(self) -> Figure:
-        frontier_returns: NDArray= self.__get_frontier_returns()
-        frontier_std_devs, frontier_hovertexts = (self
-            .__get_frontier_std_devs_hover_text(frontier_returns))
-        max_sharpe_ratio_marker = Scatter(**Marker(self.max_sharpe_p, 'red',
+        y = self.__get_frontier_returns()
+        x, hovertexts = self.__get_frontier_std_devs_hover_text(y)
+        sharpe_ratio_marker = Scatter(**Marker(self.max_sharpe_p, 'red',
             outline=True).__dict__)
-        min_std_dev_marker = Scatter(**Marker(self.min_risk_p, 'green',
+        std_dev_marker = Scatter(**Marker(self.min_risk_p, 'green',
             outline=True).__dict__)
-        frontier_curve = Scatter(**Lines(frontier_std_devs, frontier_returns,
-            frontier_hovertexts).__dict__)
-        data: List[Scatter]= [max_sharpe_ratio_marker, min_std_dev_marker,
-            frontier_curve]
+        curve = Scatter(**Lines(x, y, hovertexts).__dict__)
+        data: List[Scatter]= [sharpe_ratio_marker, std_dev_marker, curve]
         layout = Layout(**FrontierLayout().__dict__)
         return Figure(data=data, layout=layout)
     def __name_portfolio(self, max_sharpe: Optional[bool]=None,
@@ -207,6 +204,10 @@ class EfficientFrontier:
     def predict(self, target_return: Optional[float]=None, 
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
         min_risk: Optional[bool]=None, name: Optional[str]=None) -> Portfolio:
+        option_assertions = iter([max_sharpe, min_risk,
+            (target_return or target_std_dev)])
+        msg = "Too many options."
+        assert any(option_assertions) and not any(option_assertions), msg
         name = self.__name_portfolio(max_sharpe, min_risk, name)
         return self.__check_optimize_type(max_sharpe=max_sharpe,
             target_std_dev=target_std_dev, target_return=target_return,

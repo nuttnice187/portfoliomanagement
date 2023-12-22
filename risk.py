@@ -185,7 +185,7 @@ class EfficientFrontier:
         elif min_risk:
             name = 'Minimum Risk'
         return name
-    def __check_optimize_type(self, max_sharpe: Optional[bool]=None,
+    def __check_option_get_p(self, max_sharpe: Optional[bool]=None,
         target_return: Optional[float]=None,
         target_std_dev: Optional[float]=None, name: Optional[str]=None
         ) -> Portfolio:
@@ -204,11 +204,10 @@ class EfficientFrontier:
     def predict(self, target_return: Optional[float]=None, 
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
         min_risk: Optional[bool]=None, name: Optional[str]=None) -> Portfolio:
-        option_assertions = iter([max_sharpe, min_risk,
-            (target_return or target_std_dev)])
-        msg = "Too many options."
-        assert any(option_assertions) and not any(option_assertions), msg
+        options = iter(
+            [max_sharpe, min_risk, (target_return or target_std_dev)])
+        assert any(options) and not any(options), "Too many options."
         name = self.__name_portfolio(max_sharpe, min_risk, name)
-        return self.__check_optimize_type(max_sharpe=max_sharpe,
+        return self.__check_option_get_p(max_sharpe=max_sharpe,
             target_std_dev=target_std_dev, target_return=target_return,
             name=name)

@@ -178,17 +178,16 @@ class EfficientFrontier:
         data: List[Scatter]= [sharpe_ratio_marker, std_dev_marker, curve]
         layout = Layout(**FrontierLayout().__dict__)
         return Figure(data=data, layout=layout)
-    def __name_portfolio(self, max_sharpe: Optional[bool]=None,
-        min_risk: Optional[bool]=None, name: Optional[str]=None) -> str:
+    def __name_portfolio(self, max_sharpe: Optional[bool],
+        min_risk: Optional[bool], name: Optional[str]) -> str:
         if max_sharpe:
             name = 'Maximum Sharpe Ratio'
         elif min_risk:
             name = 'Minimum Risk'
         return name
-    def __check_option_get_p(self, max_sharpe: Optional[bool]=None,
-        target_return: Optional[float]=None,
-        target_std_dev: Optional[float]=None, name: Optional[str]=None
-        ) -> Portfolio:
+    def __check_option_get_p(self, max_sharpe: Optional[bool],
+        target_return: Optional[float], target_std_dev: Optional[float],
+        name: Optional[str]) -> Portfolio:
         c = Constraints(self.mean_returns, self.cov_matrix, self.trading_days,
             target_return, target_std_dev).__dict__.values()
         if max_sharpe or target_std_dev:
@@ -208,6 +207,5 @@ class EfficientFrontier:
             [max_sharpe, min_risk, (target_return or target_std_dev)])
         assert any(options) and not any(options), "Too many options."
         name = self.__name_portfolio(max_sharpe, min_risk, name)
-        return self.__check_option_get_p(max_sharpe=max_sharpe,
-            target_std_dev=target_std_dev, target_return=target_return,
-            name=name)
+        return self.__check_option_get_p(max_sharpe, target_return,
+            target_std_dev, name)

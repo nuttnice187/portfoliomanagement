@@ -80,8 +80,8 @@ class Point:
     def __init__(self, portfolio: Portfolio, color: str) -> None:
         self.name, self.mode = portfolio.name, 'markers'
         self.x, self.y = [portfolio.std_dev], [portfolio.p_return]
-        self.marker = {"color": color, "size": 14, "line": {
-            "width": 3, "color": 'black'}}
+        self.marker = {"color": 'white', "size": 14, "line": {
+            "width": 3, "color": color}}
         self.hovertext = portfolio.__repr__(sep='<br>')
 
 class Lines:
@@ -203,7 +203,7 @@ class EfficientFrontier:
         x, hovertexts = self.__get_frontier_std_devs_hover_text(y)
         sharpe_ratio_marker = Scatter(**Point(self.max_sharpe_p, 'black')
             .__dict__)
-        std_dev_marker = Scatter(**Point(self.min_risk_p, 'red')
+        std_dev_marker = Scatter(**Point(self.min_risk_p, 'grey')
             .__dict__)
         rand_portfolios = Scatter(**RandomPortfolios(
             self.__get_rand_portfolios()).__dict__)

@@ -105,8 +105,8 @@ class FrontierLayout:
     legend: Dict[str, Union[float, str, int]]
     width: int
     height: int
-    def __init__(self, title: str='Portfolio Optimization') -> None:
-        self.title = title
+    def __init__(self, trading_days: int) -> None:
+        self.title = 'Portfolio Optimization: {} Day Return Risk Simulator'.format(trading_days)
         self.yaxis = {"title": 'Return', "tickformat": ',.0%'}
         self.xaxis = {"title": 'Standard Deviation', "tickformat": ',.0%'}
         self.showlegend = True
@@ -202,9 +202,8 @@ class EfficientFrontier:
         rand_portfolios = Scatter(**RandomPortfolios(
             self.__get_rand_portfolios()).__dict__)
         curve = Scatter(**Lines(x, y, hovertexts).__dict__)
-        data: List[Scatter]= [sharpe_ratio_marker, std_dev_marker,
-            rand_portfolios, curve]
-        layout = Layout(**FrontierLayout().__dict__)
+        data: List[Scatter]= [rand_portfolios, curve, sharpe_ratio_marker, std_dev_marker]
+        layout = Layout(**FrontierLayout(self.trading_days).__dict__)
         return Figure(data=data, layout=layout)
     def __name_portfolio(self, max_sharpe: Optional[bool],
         min_risk: Optional[bool], name: Optional[str]) -> str:

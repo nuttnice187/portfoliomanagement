@@ -38,7 +38,7 @@ class Portfolio:
         res = []
         res.append('    Returns: {:.2%}'.format(self.p_return))
         res.append('    Standard Deviation: {:.2%}'.format(self.std_dev))
-        res.append('    Sharpe Ratio: {:.2}'.format(self.sharpe_ratio))
+        res.append('    Sharpe Ratio: {:.4}'.format(self.sharpe_ratio))
         res.append('    Weight Allocation:')
         for k, v in self.get_weight_allocation().items():
             res.append('        {}: {:.2%}'.format(k, v))
@@ -186,7 +186,8 @@ class EfficientFrontier:
             frontier_std_devs.append(portfolio.std_dev)
             hover_text.append(portfolio.__repr__(sep='<br>'))
         return frontier_std_devs, hover_text
-    def __get_rand_points(self, n = 1500) -> Tuple[List[float], List[float], List[str], List[float]]:
+    def __get_rand_points(self, n = 1500) -> Tuple[List[float], List[float], List[str],
+        List[float]]:
         x, y, hovertext, sharpe_ratios = [], [], [], []
         for i in range(n):
             random_weights = np.random.rand(self.asset_len)

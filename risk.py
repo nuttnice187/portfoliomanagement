@@ -57,14 +57,10 @@ class RandomPortfolios:
     marker: Dict
     mode: str
     hovertext: List[str]
-    def __init__(self, portfolios: List[Portfolio]):
-        self.x, self.y, self.hovertext, colors = [], [], [], []
-        for p in portfolios:
-            self.x.append(p.std_dev)
-            self.y.append(p.p_return)
-            self.hovertext.append(p.__repr__(sep='<br>'))
-            colors.append(p.sharpe_ratio)
-        self.marker = dict(color = colors, showscale=True, size=7,
+    def __init__(self, x: List[float], y: List[float], hovertext: List[str],
+        sharpe_ratios: List[float]):        
+        self.x, self.y, self.hovertext = x, y, hovertext
+        self.marker = dict(color = sharpe_ratios, showscale=True, size=7,
             line=dict(width=1), colorscale="RdGy", colorbar=dict(
                 title='Sharpe<br>Ratio'))
         self.mode, self.name = 'markers', 'Random Portfolios'
@@ -190,23 +186,27 @@ class EfficientFrontier:
             frontier_std_devs.append(portfolio.std_dev)
             hover_text.append(portfolio.__repr__(sep='<br>'))
         return frontier_std_devs, hover_text
-    def __get_rand_portfolios(self, n = 1000) -> List[Portfolio]:
-        res: List= []    
+    def __get_rand_points(self, n = 1500) -> Tuple[List[float], List[float], List[str], List[float]]:
+        x, y, hovertext, sharpe_ratios = [], [], [], []
         for i in range(n):
             random_weights = np.random.rand(self.asset_len)
             random_weights = random_weights/sum(random_weights)
-            res.append(Portfolio(random_weights, self.mean_returns,
-                self.cov_matrix, self.trading_days, self.risk_free_rate))
-        return res
+            p = Portfolio(random_weights, self.mean_returns, self.cov_matrix,
+                self.trading_days, self.risk_free_rate)
+            x.append(p.std_dev)
+            y.append(p.p_return)
+            hovertext.append(p.__repr__(sep='<br>'))
+            sharpe_ratios.append(p.sharpe_ratio)
+        return x, y, hovertext, sharpe_ratios
     def __plot_frontier_curve(self) -> Figure:
         y = self.__get_frontier_returns()
         x, hovertexts = self.__get_frontier_std_devs_hover_text(y)
         sharpe_ratio_marker = Scatter(**Point(self.max_sharpe_p, 'black')
             .__dict__)
-        std_dev_marker = Scatter(**Point(self.min_risk_p, 'grey')
+        std_dev_marker = Scatter(**Point(self.min_risk_p, 'red')
             .__dict__)
         rand_portfolios = Scatter(**RandomPortfolios(
-            self.__get_rand_portfolios()).__dict__)
+            *self.__get_rand_points()).__dict__)
         curve = Scatter(**Lines(x, y, hovertexts).__dict__)
         data: List[Scatter]= [rand_portfolios, curve, sharpe_ratio_marker,
             std_dev_marker]

@@ -65,7 +65,7 @@ class RandomPortfolios:
             self.hovertext.append(p.__repr__(sep='<br>'))
             colors.append(p.sharpe_ratio)
         self.marker = dict(color = colors, showscale=True, size=7,
-            line=dict(width=1), colorscale="RdBu", colorbar=dict(
+            line=dict(width=1), colorscale="RdGy", colorbar=dict(
                 title='Sharpe<br>Ratio'))
         self.mode, self.name = 'markers', 'Random Portfolios'
         
@@ -195,9 +195,9 @@ class EfficientFrontier:
     def __plot_frontier_curve(self) -> Figure:
         y = self.__get_frontier_returns()
         x, hovertexts = self.__get_frontier_std_devs_hover_text(y)
-        sharpe_ratio_marker = Scatter(**Point(self.max_sharpe_p, 'red')
+        sharpe_ratio_marker = Scatter(**Point(self.max_sharpe_p, 'black')
             .__dict__)
-        std_dev_marker = Scatter(**Point(self.min_risk_p, 'green')
+        std_dev_marker = Scatter(**Point(self.min_risk_p, 'red')
             .__dict__)
         rand_portfolios = Scatter(**RandomPortfolios(
             self.__get_rand_portfolios()).__dict__)

@@ -106,9 +106,14 @@ class FrontierLayout:
     width: int
     height: int
     def __init__(self, trading_days: int) -> None:
-        self.title = 'Portfolio Optimization: {} Day Return Risk Simulator'.format(trading_days)
-        self.yaxis = {"title": 'Return', "tickformat": ',.0%'}
-        self.xaxis = {"title": 'Standard Deviation', "tickformat": ',.0%'}
+        self.title = 'Portfolio Optimization: Risk, Return Simulator'
+        if trading_days == 252:
+            title = 'Annualized'
+        else:
+            title = '{}-Day'.format(trading_days)
+        self.yaxis = {"title": '{} Return'.format(title), "tickformat": ',.0%'}
+        self.xaxis = {"title": '{} Risk (Standard Deviation)'.format(title),
+            "tickformat": ',.0%'}
         self.showlegend = True
         self.legend = dict(orientation="h", yanchor="bottom", y=1.02,
             xanchor="right", x=1)
@@ -119,7 +124,7 @@ class Constraints:
     weight: Dict[str, Union[str, Callable[[NDArray], float]]]
     return_p: Dict[str, Union[str, Callable[[NDArray], float]]]
     std_dev: Dict[str, Union[str, Callable[[NDArray], float]]]
-    def __init__(self, mean_returns: pd.Series, cov_matrix: pd.DataFrame, 
+    def __init__(self, mean_returns: pd.Series, cov_matrix: pd.DataFrame,
         trading_days: int, target_return: Optional[float]=None,
         target_std_dev: Optional[float]=None) -> None:
         self.weight = {"type": 'eq', "fun": lambda x: np.sum(x) - 1}
@@ -143,8 +148,9 @@ class EfficientFrontier:
     bound: Tuple[float, float]
     fig: Figure
     def __init__(self, adjusted_close: pd.DataFrame, risk_free_rate: float=0.04,
-        bound: Tuple[float, float]=(0, 1)) -> None:
-        self.trading_days, self.asset_len = adjusted_close.shape
+        bound: Tuple[float, float]=(0, 1), trading_days: int=252) -> None:
+        self.trading_days = trading_days
+        self.asset_len = len(adjusted_close.columns)
         percent_change = adjusted_close.pct_change()
         self.mean_returns = percent_change.mean()
         self.cov_matrix = percent_change.cov()
@@ -202,7 +208,8 @@ class EfficientFrontier:
         rand_portfolios = Scatter(**RandomPortfolios(
             self.__get_rand_portfolios()).__dict__)
         curve = Scatter(**Lines(x, y, hovertexts).__dict__)
-        data: List[Scatter]= [rand_portfolios, curve, sharpe_ratio_marker, std_dev_marker]
+        data: List[Scatter]= [rand_portfolios, curve, sharpe_ratio_marker,
+            std_dev_marker]
         layout = Layout(**FrontierLayout(self.trading_days).__dict__)
         return Figure(data=data, layout=layout)
     def __name_portfolio(self, max_sharpe: Optional[bool],

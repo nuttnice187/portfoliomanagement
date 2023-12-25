@@ -51,20 +51,37 @@ class Portfolio:
             res[s] = weight
         return res
 
-class Marker:
+class RandomPortfolios:
+    x: List[float]
+    y: List[float]
+    marker: Dict
+    mode: str
+    hovertext: List[str]
+    def __init__(self, portfolios: List[Portfolio]):
+        self.x, self.y, self.hovertext, colors = [], [], [], []
+        for p in portfolios:
+            self.x.append(p.std_dev)
+            self.y.append(p.p_return)
+            self.hovertext.append(p.__repr__(sep='<br>'))
+            colors.append(p.sharpe_ratio)
+        self.marker = dict(color = colors, showscale=True, size=7,
+            line=dict(width=1), colorscale="RdBu", colorbar=dict(
+                title='Sharpe<br>Ratio'))
+        self.mode, self.name = 'markers', 'Random Portfolios'
+        
+
+class Point:
     name: str
     mode: str
     x: List[float]
     y: List[float]
     marker: Dict[str, Union[str, int, Dict[str, Union[int, str]]]]
     hovertext: str
-    def __init__(self, portfolio: Portfolio, color: str,
-        outline: Optional[bool]=None) -> None:
+    def __init__(self, portfolio: Portfolio, color: str) -> None:
         self.name, self.mode = portfolio.name, 'markers'
         self.x, self.y = [portfolio.std_dev], [portfolio.p_return]
-        self.marker = {"color": color, "size": 14}
-        if outline:
-            self.marker["line"] = {"width": 3, "color": 'black'}
+        self.marker = {"color": color, "size": 14, "line": {
+            "width": 3, "color": 'black'}}
         self.hovertext = portfolio.__repr__(sep='<br>')
 
 class Lines:
@@ -93,8 +110,8 @@ class FrontierLayout:
         self.yaxis = {"title": 'Return', "tickformat": ',.0%'}
         self.xaxis = {"title": 'Standard Deviation', "tickformat": ',.0%'}
         self.showlegend = True
-        self.legend = {"x": .75, "y": 0, "traceorder": 'normal',
-            "bgcolor": '#E2E2E2', "bordercolor": 'black', "borderwidth": 2}
+        self.legend = dict(orientation="h", yanchor="bottom", y=1.02,
+            xanchor="right", x=1)
         self.width = 800
         self.height = 600
 
@@ -167,15 +184,26 @@ class EfficientFrontier:
             frontier_std_devs.append(portfolio.std_dev)
             hover_text.append(portfolio.__repr__(sep='<br>'))
         return frontier_std_devs, hover_text
+    def __get_rand_portfolios(self, n = 1000) -> List[Portfolio]:
+        res: List= []    
+        for i in range(n):
+            random_weights = np.random.rand(self.asset_len)
+            random_weights = random_weights/sum(random_weights)
+            res.append(Portfolio(random_weights, self.mean_returns,
+                self.cov_matrix, self.trading_days, self.risk_free_rate))
+        return res
     def __plot_frontier_curve(self) -> Figure:
         y = self.__get_frontier_returns()
         x, hovertexts = self.__get_frontier_std_devs_hover_text(y)
-        sharpe_ratio_marker = Scatter(**Marker(self.max_sharpe_p, 'red',
-            outline=True).__dict__)
-        std_dev_marker = Scatter(**Marker(self.min_risk_p, 'green',
-            outline=True).__dict__)
+        sharpe_ratio_marker = Scatter(**Point(self.max_sharpe_p, 'red')
+            .__dict__)
+        std_dev_marker = Scatter(**Point(self.min_risk_p, 'green')
+            .__dict__)
+        rand_portfolios = Scatter(**RandomPortfolios(
+            self.__get_rand_portfolios()).__dict__)
         curve = Scatter(**Lines(x, y, hovertexts).__dict__)
-        data: List[Scatter]= [sharpe_ratio_marker, std_dev_marker, curve]
+        data: List[Scatter]= [sharpe_ratio_marker, std_dev_marker,
+            rand_portfolios, curve]
         layout = Layout(**FrontierLayout().__dict__)
         return Figure(data=data, layout=layout)
     def __name_portfolio(self, max_sharpe: Optional[bool],

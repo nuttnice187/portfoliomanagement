@@ -236,8 +236,7 @@ class EfficientFrontier:
         min_risk: Optional[bool]=None, name: Optional[str]=None) -> Portfolio:
         options = iter(
             [max_sharpe, min_risk, (target_return or target_std_dev)])
-        assert any(options) and not any(options), ' '.join(
-            ("Options over",
+        assert any(options) and not any(options), ' '.join(("Options over",
             "loaded: too many or too few options. Target return, risk should",
             "be greater than zero"))
         name = self.__name_portfolio(max_sharpe, min_risk, name)

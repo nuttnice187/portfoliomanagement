@@ -60,9 +60,9 @@ class RandomPortfolios:
     def __init__(self, x: List[float], y: List[float], hovertext: List[str],
         sharpe_ratios: List[float]):        
         self.x, self.y, self.hovertext = x, y, hovertext
-        self.marker = dict(color = sharpe_ratios, showscale=True, size=7,
-            line=dict(width=1), colorscale="RdGy", colorbar=dict(
-                title='Sharpe<br>Ratio'))
+        self.marker = {"color": sharpe_ratios, "showscale": True, "size": 7,
+            "line":{"width": 1}, "colorscale": "RdGy", "colorbar": {
+                "title":'Sharpe<br>Ratio'}}
         self.mode, self.name = 'markers', 'Random Portfolios'
         
 
@@ -111,8 +111,8 @@ class FrontierLayout:
         self.xaxis = {"title": '{} Risk (Standard Deviation)'.format(title),
             "tickformat": ',.0%'}
         self.showlegend = True
-        self.legend = dict(orientation="h", yanchor="bottom", y=1.02,
-            xanchor="right", x=1)
+        self.legend = {"orientation": "h", "yanchor": "bottom", "y": 1.02,
+            "xanchor": "right", "x": 1}
         self.width = 800
         self.height = 600
 
@@ -161,13 +161,11 @@ class EfficientFrontier:
             res.append(p.name)
             res.append(p.__repr__())
         return '\n'.join(res)
-    def __get_optimal_portfolio(self, fun: Callable, constraints:  Tuple[Dict[
-            str, Union[str, Callable[[NDArray[np.float64]], float]]]],
+    def __get_optimal_portfolio(self, fun: Callable, name: Optional[str],
+        constraints:  Tuple[Dict[str, Union[str, Callable[[NDArray[np.float64
+            ]], float]]]],
         *args: Union[pd.Series, pd.DataFrame, int, float], **kwargs: str
         ) -> Portfolio:
-        name = None
-        if 'name' in kwargs and kwargs['name']:
-            name = kwargs['name']
         bounds: Tuple[Tuple[float, float]]= tuple(self.bound for i in range(
             self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]
@@ -226,21 +224,22 @@ class EfficientFrontier:
         c = Constraints(self.mean_returns, self.cov_matrix, self.trading_days,
             target_return, target_std_dev).__dict__.values()
         if max_sharpe or target_std_dev:
-            res = self.__get_optimal_portfolio(*(get_neg_sharpe_ratio, c,
+            res = self.__get_optimal_portfolio(*(get_neg_sharpe_ratio, name, c,
                     self.mean_returns, self.cov_matrix, self.trading_days,
-                    self.risk_free_rate),
-                **{"name": name})
+                    self.risk_free_rate))
         else:
-            res = self.__get_optimal_portfolio(*(get_std_dev_p, c,
-                    self.cov_matrix, self.trading_days),
-                **{"name": name})
+            res = self.__get_optimal_portfolio(*(get_std_dev_p, name, c,
+                    self.cov_matrix, self.trading_days))
         return res
     def predict(self, target_return: Optional[float]=None, 
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
         min_risk: Optional[bool]=None, name: Optional[str]=None) -> Portfolio:
         options = iter(
             [max_sharpe, min_risk, (target_return or target_std_dev)])
-        assert any(options) and not any(options), "Too many options."
+        assert any(options) and not any(options), ' '.join(
+            ("Options over",
+            "loaded: too many or too few options. Target return, risk should",
+            "be greater than zero"))
         name = self.__name_portfolio(max_sharpe, min_risk, name)
         return self.__check_option_get_p(max_sharpe, target_return,
             target_std_dev, name)

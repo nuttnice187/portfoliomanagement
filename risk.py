@@ -134,6 +134,26 @@ class Constraints:
                 "fun": lambda x: get_std_dev_p(x, cov_matrix, trading_days
                     ) - target_std_dev}
 
+
+class OptionArgs:
+    def __init__(self, cov_matrix: pd.DataFrame, trading_days: int,
+        mean_returns: pd.Series, risk_free_rate: float, name: Optional[str],
+        max_sharpe: Optional[bool], target_return: Optional[float],
+        target_std_dev: Optional[float]) -> None:
+        if max_sharpe or target_std_dev:
+            self.fun = get_neg_sharpe_ratio
+        else:
+            self.fun = get_std_dev_p
+        self.name = name
+        self.constraints = Constraints(mean_returns, cov_matrix, trading_days,
+            target_return, target_std_dev).__dict__.values()
+        if max_sharpe or target_std_dev:
+            self.mean_returns = mean_returns
+        self.cov_matrix = cov_matrix
+        self.trading_days = trading_days
+        if max_sharpe or target_std_dev:
+            self.risk_free_rate = risk_free_rate
+
 class EfficientFrontier:
     mean_returns: pd.Series
     cov_matrix: pd.DataFrame
@@ -212,19 +232,6 @@ class EfficientFrontier:
             std_dev_marker]
         layout = Layout(**FrontierLayout(self.trading_days).__dict__)
         return Figure(data=data, layout=layout)
-    def __check_option_get_p(self, max_sharpe: Optional[bool],
-        target_return: Optional[float], target_std_dev: Optional[float],
-        name: Optional[str]) -> Portfolio:
-        c = Constraints(self.mean_returns, self.cov_matrix, self.trading_days,
-            target_return, target_std_dev).__dict__.values()
-        if max_sharpe or target_std_dev:
-            res = self.__get_optimal_portfolio(*(get_neg_sharpe_ratio, name, c,
-                    self.mean_returns, self.cov_matrix, self.trading_days,
-                    self.risk_free_rate))
-        else:
-            res = self.__get_optimal_portfolio(*(get_std_dev_p, name, c,
-                    self.cov_matrix, self.trading_days))
-        return res
     def predict(self, target_return: Optional[float]=None, 
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
         min_risk: Optional[bool]=None, name: Optional[str]=None) -> Portfolio:
@@ -233,5 +240,6 @@ class EfficientFrontier:
         assert any(options) and not any(options), ' '.join(("Options over",
             "loaded: too many or too few options. Target return, risk should",
             "be greater than zero"))
-        return self.__check_option_get_p(max_sharpe, target_return,
-            target_std_dev, name)
+        return self.__get_optimal_portfolio(*OptionArgs(self.cov_matrix,
+            self.trading_days, self.mean_returns, self.risk_free_rate, name,
+            max_sharpe, target_return, target_std_dev).__dict__.values())

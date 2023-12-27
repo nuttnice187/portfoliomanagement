@@ -166,16 +166,12 @@ class FrontierTraces:
     curve: Scatter
     sharpe_ratio_marker: Scatter
     std_dev_marker: Scatter
-    def __init__(self, max_sharpe_p: Portfolio, min_risk_p: Portfolio,
-        rand_points: Tuple[List[float], List[float], List[str], List[float]],
-        x: List[float], y: NDArray[np.float], hovertexts: List[str]) -> None:
-        self.rand_portfolios = Scatter(**RandomPortfolios(
-            *rand_points).__dict__)
-        self.curve = Scatter(**Lines(x, y, hovertexts).__dict__)
-        self.sharpe_ratio_marker = Scatter(**Point(max_sharpe_p, 'black')
-            .__dict__)
-        self.std_dev_marker = Scatter(**Point(min_risk_p, 'red')
-            .__dict__)
+    def __init__(self, rand_points: RandomPortfolios, curve: Lines,
+        min_point: Point, max_point: Point) -> None:
+        self.rand_portfolios = Scatter(**rand_points.__dict__)
+        self.curve = Scatter(**curve.__dict__)
+        self.sharpe_ratio_marker = Scatter(**max_point.__dict__)
+        self.std_dev_marker = Scatter(**min_point.__dict__)
 
 class EfficientFrontier:
     mean_returns: pd.Series
@@ -242,8 +238,9 @@ class EfficientFrontier:
     def __plot_frontier_curve(self) -> Figure:
         y = self.__get_frontier_returns()
         x, hovertexts = self.__get_frontier_std_devs_hover_text(y)
-        data = list(FrontierTraces(self.max_sharpe_p, self.min_risk_p,
-            self.__get_rand_points(), x, y, hovertexts).__dict__.values())
+        data = list(FrontierTraces(RandomPortfolios(*self.__get_rand_points()),
+                Lines(x, y, hovertexts), Point(self.min_risk_p, 'red'),
+                Point(self.max_sharpe_p, 'black')).__dict__.values())
         layout = Layout(**FrontierLayout(self.trading_days).__dict__)
         return Figure(data=data, layout=layout)
     def predict(self, target_return: Optional[float]=None, 

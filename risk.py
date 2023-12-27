@@ -165,9 +165,8 @@ class EfficientFrontier:
         return '\n'.join(res)
     def __get_optimal_portfolio(self, fun: Callable, name: Optional[str],
         constraints:  Tuple[Dict[str, Union[str, Callable[[NDArray[np.float64
-            ]], float]]]],
-        *args: Union[pd.Series, pd.DataFrame, int, float], **kwargs: str
-        ) -> Portfolio:
+                ]], float]]]],
+        *args: Union[pd.Series, pd.DataFrame, int, float]) -> Portfolio:
         bounds: Tuple[Tuple[float, float]]= tuple(self.bound for i in range(
             self.asset_len))
         initial_weights: List[float]= self.asset_len*[1/self.asset_len]
@@ -182,12 +181,12 @@ class EfficientFrontier:
             np.float64]) -> Tuple[List[float], List[str]]:
         frontier_std_devs, hover_text = [], []
         for r in frontier_returns:
-            portfolio = self.predict(target_return=r)
-            frontier_std_devs.append(portfolio.std_dev)
-            hover_text.append(portfolio.__repr__(sep='<br>'))
+            p = self.predict(target_return=r)
+            frontier_std_devs.append(p.std_dev)
+            hover_text.append(p.__repr__(sep='<br>'))
         return frontier_std_devs, hover_text
-    def __get_rand_points(self, n = 1500) -> Tuple[List[float], List[float], List[str],
-            List[float]]:
+    def __get_rand_points(self, n = 1500) -> Tuple[List[float], List[float],
+            List[str], List[float]]:
         x, y, hovertext, sharpe_ratios = [], [], [], []
         for i in range(n):
             random_weights = np.random.rand(self.asset_len)

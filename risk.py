@@ -151,8 +151,8 @@ class EfficientFrontier:
         self.mean_returns = percent_change.mean()
         self.cov_matrix = percent_change.cov()
         self.risk_free_rate, self.bound = risk_free_rate, bound
-        self.max_sharpe_p = self.predict(max_sharpe=True)
-        self.min_risk_p = self.predict(min_risk=True)
+        self.max_sharpe_p = self.predict(max_sharpe=True, name='Maximum Sharpe Ratio')
+        self.min_risk_p = self.predict(min_risk=True, name='Minimum Risk')
         self.fig = self.__plot_frontier_curve()
     def __repr__(self) -> str:
         portfolios: Tuple[Portfolio]= (self.max_sharpe_p,  self.min_risk_p)
@@ -211,13 +211,6 @@ class EfficientFrontier:
             std_dev_marker]
         layout = Layout(**FrontierLayout(self.trading_days).__dict__)
         return Figure(data=data, layout=layout)
-    def __name_portfolio(self, max_sharpe: Optional[bool],
-        min_risk: Optional[bool], name: Optional[str]) -> str:
-        if max_sharpe:
-            name = 'Maximum Sharpe Ratio'
-        elif min_risk:
-            name = 'Minimum Risk'
-        return name
     def __check_option_get_p(self, max_sharpe: Optional[bool],
         target_return: Optional[float], target_std_dev: Optional[float],
         name: Optional[str]) -> Portfolio:
@@ -239,6 +232,5 @@ class EfficientFrontier:
         assert any(options) and not any(options), ' '.join(("Options over",
             "loaded: too many or too few options. Target return, risk should",
             "be greater than zero"))
-        name = self.__name_portfolio(max_sharpe, min_risk, name)
         return self.__check_option_get_p(max_sharpe, target_return,
             target_std_dev, name)

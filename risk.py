@@ -54,9 +54,11 @@ class Portfolio:
 class RandomPortfolios:
     x: List[float]
     y: List[float]
-    marker: Dict
-    mode: str
+    marker: Dict[str, Union[List[float], bool, int, Dict[str, int], str, 
+            Dict[str, str]]]
     hovertext: List[str]
+    mode: str
+    name: str
     def __init__(self, x: List[float], y: List[float], hovertext: List[str],
         sharpe_ratios: List[float]):        
         self.x, self.y, self.hovertext = x, y, hovertext
@@ -64,7 +66,6 @@ class RandomPortfolios:
             "line":{"width": 1}, "colorscale": "RdGy", "colorbar": {
                 "title":'Sharpe<br>Ratio'}}
         self.mode, self.name = 'markers', 'Random Portfolios'
-        
 
 class Point:
     name: str
@@ -151,7 +152,8 @@ class EfficientFrontier:
         self.mean_returns = percent_change.mean()
         self.cov_matrix = percent_change.cov()
         self.risk_free_rate, self.bound = risk_free_rate, bound
-        self.max_sharpe_p = self.predict(max_sharpe=True, name='Maximum Sharpe Ratio')
+        self.max_sharpe_p = self.predict(max_sharpe=True,
+            name='Maximum Sharpe Ratio')
         self.min_risk_p = self.predict(min_risk=True, name='Minimum Risk')
         self.fig = self.__plot_frontier_curve()
     def __repr__(self) -> str:
@@ -185,7 +187,7 @@ class EfficientFrontier:
             hover_text.append(portfolio.__repr__(sep='<br>'))
         return frontier_std_devs, hover_text
     def __get_rand_points(self, n = 1500) -> Tuple[List[float], List[float], List[str],
-        List[float]]:
+            List[float]]:
         x, y, hovertext, sharpe_ratios = [], [], [], []
         for i in range(n):
             random_weights = np.random.rand(self.asset_len)

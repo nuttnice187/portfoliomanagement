@@ -227,11 +227,11 @@ class EfficientFrontier:
             hover_text.append(p.__repr__(sep='<br>'))
         return frontier_std_devs, frontier_returns, hover_text
     def __plot_figure(self) -> Figure:
-        data = list(FrontierTraces(RandomPortfolios(self.mean_returns,
-            self.cov_matrix, self.trading_days, self.risk_free_rate,
-            self.asset_len), Curve(*self.__get_frontier()), Point(
-                self.min_risk_p, 'red'), Point(self.max_sharpe_p, 'black')
-            ).__dict__.values())
+        data = list(FrontierTraces(RandomPortfolios(self.mean_returns, 
+                    self.cov_matrix, self.trading_days, self.risk_free_rate,
+                    self.asset_len),
+                Curve(*self.__get_frontier()), Point(self.min_risk_p, 'red'),
+                Point(self.max_sharpe_p, 'black')).__dict__.values())
         layout = Layout(**FrontierLayout(self.trading_days).__dict__)
         return Figure(data=data, layout=layout)
     def predict(self, target_return: Optional[float]=None, 
@@ -243,8 +243,8 @@ class EfficientFrontier:
             "loaded: too many or too few options. Target return, risk should",
             "be greater than zero"))
         opt_res: OptimizeResult= minimize(**OptimizeArgs(self.cov_matrix,
-            self.trading_days, self.mean_returns, self.risk_free_rate,
-            self.asset_len, self.bound, max_sharpe, target_return,
-            target_std_dev).__dict__)
+                self.trading_days, self.mean_returns, self.risk_free_rate,
+                self.asset_len, self.bound, max_sharpe, target_return,
+                target_std_dev).__dict__)
         return Portfolio(opt_res.x, self.mean_returns, self.cov_matrix,
             self.trading_days, self.risk_free_rate, name=name)

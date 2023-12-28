@@ -26,7 +26,7 @@ class Portfolio:
     weights: NDArray[np.float64]
     symbols: pd.Index
     name: Optional[str]
-    def __init__(self, weights: NDArray[np.float64], mean_returns: pd.Series, 
+    def __init__(self, weights: NDArray[np.float64], mean_returns: pd.Series,
         cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float,
         name: Optional[str]=None) -> None:
         self.p_return = get_return_p(weights, mean_returns, trading_days)
@@ -38,10 +38,10 @@ class Portfolio:
         res = []
         if self.name:
             res.append(self.name)
-        res.append('    Returns: {:.2%}'.format(self.p_return))
-        res.append('    Standard Deviation: {:.2%}'.format(self.std_dev))
-        res.append('    Sharpe Ratio: {:.4}'.format(self.sharpe_ratio))
-        res.append('    Weight Allocation:')
+        res.extend(('    Returns: {:.2%}'.format(self.p_return),
+            '    Standard Deviation: {:.2%}'.format(self.std_dev),
+            '    Sharpe Ratio: {:.4}'.format(self.sharpe_ratio),
+            '    Weight Allocation:'))
         for k, v in self.get_weight_allocation().items():
             res.append('        {}: {:.2%}'.format(k, v))
         return sep.join(res)
@@ -152,30 +152,30 @@ class Constraints:
 
 class OptimizeArgs:
     fun: Union[Callable, Callable]
-    name: str
+    x0: List[float]
+    args: Tuple[Union[pd.Series, pd.DataFrame, int, float]]
+    method: str
+    bounds: Tuple[Tuple[float]]
     constraints: Tuple[Dict[str, Union[str, Callable[[NDArray], float]]]]
     mean_returns: pd.Series
     cov_matrix: pd.DataFrame
     trading_days: int
     risk_free_rate: float
     def __init__(self, cov_matrix: pd.DataFrame, trading_days: int,
-        mean_returns: pd.Series, risk_free_rate: float, name: Optional[str],
-        max_sharpe: Optional[bool], target_return: Optional[float],
-        target_std_dev: Optional[float]) -> None:
-        is_sharpe_optimization: bool= bool((max_sharpe or target_std_dev))
-        if is_sharpe_optimization:
+        mean_returns: pd.Series, risk_free_rate: float, asset_len: int,
+        bound: Tuple[float], max_sharpe: Optional[bool],
+        target_return: Optional[float], target_std_dev: Optional[float]
+        ) -> None:
+        if (max_sharpe or target_std_dev):
             self.fun = get_neg_sharpe_ratio
+            self.args = (mean_returns, cov_matrix, trading_days, risk_free_rate)
         else:
             self.fun = get_std_dev_p
-        self.name = name
+            self.args = (cov_matrix, trading_days)
+        self.x0, self.method = asset_len*[1/asset_len], 'SLSQP'
+        self.bounds = tuple(bound for i in range(asset_len))
         self.constraints = Constraints(mean_returns, cov_matrix, trading_days,
             target_return, target_std_dev).__dict__.values()
-        if is_sharpe_optimization:
-            self.mean_returns = mean_returns
-        self.cov_matrix = cov_matrix
-        self.trading_days = trading_days
-        if is_sharpe_optimization:
-            self.risk_free_rate = risk_free_rate
 
 class FrontierTraces:
     rand_portfolios: Scatter
@@ -216,17 +216,6 @@ class EfficientFrontier:
         for p in (self.max_sharpe_p,  self.min_risk_p):
             res.append(p.__repr__())
         return '\n'.join(res)
-    def __optimize_portfolio(self, fun: Callable, name: Optional[str],
-        constraints:  Tuple[Dict[str, Union[str, Callable[[NDArray[np.float64
-                                                                ]], float]]]],
-        *args: Union[pd.Series, pd.DataFrame, int, float]) -> Portfolio:
-        bounds: Tuple[Tuple[float, float]]= tuple(self.bound for i in range(
-            self.asset_len))
-        initial_weights: List[float]= self.asset_len*[1/self.asset_len]
-        opt_res: OptimizeResult= minimize(fun, initial_weights, args=args,
-            method='SLSQP', bounds=bounds, constraints=constraints)
-        return Portfolio(opt_res.x, self.mean_returns, self.cov_matrix,
-            self.trading_days, self.risk_free_rate, name=name)
     def __get_frontier(self, n: int=20) -> Tuple[List[float], List[float], 
         List[str]]:
         frontier_std_devs, frontier_returns, hover_text = [], [], []
@@ -241,8 +230,8 @@ class EfficientFrontier:
         data = list(FrontierTraces(RandomPortfolios(self.mean_returns,
             self.cov_matrix, self.trading_days, self.risk_free_rate,
             self.asset_len), Curve(*self.__get_frontier()), Point(
-                self.min_risk_p, 'red'),
-            Point(self.max_sharpe_p, 'black')).__dict__.values())
+                self.min_risk_p, 'red'), Point(self.max_sharpe_p, 'black')
+            ).__dict__.values())
         layout = Layout(**FrontierLayout(self.trading_days).__dict__)
         return Figure(data=data, layout=layout)
     def predict(self, target_return: Optional[float]=None, 
@@ -253,6 +242,9 @@ class EfficientFrontier:
         assert any(options) and not any(options), ' '.join(("Options over",
             "loaded: too many or too few options. Target return, risk should",
             "be greater than zero"))
-        return self.__optimize_portfolio(*OptimizeArgs(self.cov_matrix,
-            self.trading_days, self.mean_returns, self.risk_free_rate, name,
-            max_sharpe, target_return, target_std_dev).__dict__.values())
+        opt_res: OptimizeResult= minimize(**OptimizeArgs(self.cov_matrix,
+            self.trading_days, self.mean_returns, self.risk_free_rate,
+            self.asset_len, self.bound, max_sharpe, target_return,
+            target_std_dev).__dict__)
+        return Portfolio(opt_res.x, self.mean_returns, self.cov_matrix,
+            self.trading_days, self.risk_free_rate, name=name)

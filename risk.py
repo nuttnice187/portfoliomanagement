@@ -202,7 +202,7 @@ class EfficientFrontier:
         return '\n'.join(res)
     def __optimize_portfolio(self, fun: Callable, name: Optional[str],
         constraints:  Tuple[Dict[str, Union[str, Callable[[NDArray[np.float64
-                ]], float]]]],
+                                                                ]], float]]]],
         *args: Union[pd.Series, pd.DataFrame, int, float]) -> Portfolio:
         bounds: Tuple[Tuple[float, float]]= tuple(self.bound for i in range(
             self.asset_len))
@@ -214,14 +214,15 @@ class EfficientFrontier:
     def __get_frontier_returns(self, n: int=20) -> NDArray[np.float]:
         return np.linspace(self.min_risk_p.p_return,
             self.max_sharpe_p.p_return, n)
-    def __get_frontier_std_devs_hover_text(self, frontier_returns: NDArray[
-            np.float64]) -> Tuple[List[float], List[str]]:
-        frontier_std_devs, hover_text = [], []
-        for r in frontier_returns:
+    def __get_frontier_lines(self) -> Tuple[List[float], List[float], 
+        List[str]]:
+        frontier_std_devs, frontier_returns, hover_text = [], [], []
+        for r in self.__get_frontier_returns():
             p = self.predict(target_return=r)
             frontier_std_devs.append(p.std_dev)
+            frontier_returns.append(p.p_return)
             hover_text.append(p.__repr__(sep='<br>'))
-        return frontier_std_devs, hover_text
+        return frontier_std_devs, frontier_returns, hover_text
     def __get_rand_points(self, n = 1500) -> Tuple[List[float], List[float],
             List[str], List[float]]:
         x, y, hovertext, sharpe_ratios = [], [], [], []
@@ -236,11 +237,9 @@ class EfficientFrontier:
             sharpe_ratios.append(p.sharpe_ratio)
         return x, y, hovertext, sharpe_ratios
     def __plot_frontier_curve(self) -> Figure:
-        y = self.__get_frontier_returns()
-        x, hovertexts = self.__get_frontier_std_devs_hover_text(y)
         data = list(FrontierTraces(RandomPortfolios(*self.__get_rand_points()),
-                Lines(x, y, hovertexts), Point(self.min_risk_p, 'red'),
-                Point(self.max_sharpe_p, 'black')).__dict__.values())
+            Lines(*self.__get_frontier_lines()), Point(self.min_risk_p, 'red'),
+            Point(self.max_sharpe_p, 'black')).__dict__.values())
         layout = Layout(**FrontierLayout(self.trading_days).__dict__)
         return Figure(data=data, layout=layout)
     def predict(self, target_return: Optional[float]=None, 

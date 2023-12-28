@@ -157,10 +157,6 @@ class OptimizeArgs:
     method: str
     bounds: Tuple[Tuple[float]]
     constraints: Tuple[Dict[str, Union[str, Callable[[NDArray], float]]]]
-    mean_returns: pd.Series
-    cov_matrix: pd.DataFrame
-    trading_days: int
-    risk_free_rate: float
     def __init__(self, cov_matrix: pd.DataFrame, trading_days: int,
         mean_returns: pd.Series, risk_free_rate: float, asset_len: int,
         bound: Tuple[float], max_sharpe: Optional[bool],

@@ -166,21 +166,16 @@ class OptimizeArgs:
         bound: Tuple[float], max_sharpe: Optional[bool],
         target_return: Optional[float], target_std_dev: Optional[float]
         ) -> None:
-        is_sharpe_optimization: bool= bool((max_sharpe or target_std_dev))
-        if is_sharpe_optimization:
+        if (max_sharpe or target_std_dev):
             self.fun = get_neg_sharpe_ratio
+            self.args = (mean_returns, cov_matrix, trading_days, risk_free_rate)
         else:
             self.fun = get_std_dev_p
-        self.x0, self.args, self.method = asset_len*[1/asset_len], [], 'SLSQP'
+            self.args = (cov_matrix, trading_days)
+        self.x0, self.method = asset_len*[1/asset_len], 'SLSQP'
         self.bounds = tuple(bound for i in range(asset_len))
         self.constraints = Constraints(mean_returns, cov_matrix, trading_days,
             target_return, target_std_dev).__dict__.values()
-        if is_sharpe_optimization:
-            self.args.append(mean_returns)
-        self.args.extend((cov_matrix, trading_days))
-        if is_sharpe_optimization:
-            self.args.append(risk_free_rate)
-        self.args = tuple(self.args)
 
 class FrontierTraces:
     rand_portfolios: Scatter
@@ -235,8 +230,8 @@ class EfficientFrontier:
         data = list(FrontierTraces(RandomPortfolios(self.mean_returns,
             self.cov_matrix, self.trading_days, self.risk_free_rate,
             self.asset_len), Curve(*self.__get_frontier()), Point(
-                self.min_risk_p, 'red'),
-            Point(self.max_sharpe_p, 'black')).__dict__.values())
+                self.min_risk_p, 'red'), Point(self.max_sharpe_p, 'black')
+            ).__dict__.values())
         layout = Layout(**FrontierLayout(self.trading_days).__dict__)
         return Figure(data=data, layout=layout)
     def predict(self, target_return: Optional[float]=None, 

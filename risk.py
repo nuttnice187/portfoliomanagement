@@ -61,13 +61,29 @@ class RandomPortfolios:
     hovertext: List[str]
     mode: str
     name: str
-    def __init__(self, x: List[float], y: List[float], hovertext: List[str],
-        sharpe_ratios: List[float]):        
-        self.x, self.y, self.hovertext = x, y, hovertext
-        self.marker = {"color": sharpe_ratios, "showscale": True, "size": 7,
+    def __init__(self, mean_returns: pd.Series, cov_matrix: pd.DataFrame,
+        trading_days: int, risk_free_rate: float) -> None:        
+        self.x, self.y, self.hovertext, ratios = self.__get_rand_points(
+            mean_returns, cov_matrix, trading_days, risk_free_rate)
+        self.marker = {"color": ratios, "showscale": True, "size": 7,
             "line":{"width": 1}, "colorscale": "RdGy", "colorbar": {
                 "title":'Sharpe<br>Ratio'}}
         self.mode, self.name = 'markers', 'Random Portfolios'
+    def __get_rand_points(self, mean_returns: pd.Series,
+        cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float,
+        n: int= 1500) -> Tuple[List[float], List[float],
+            List[str], List[float]]:
+        x, y, hovertext, sharpe_ratios = [], [], [], []
+        for i in range(n):
+            random_weights = np.random.rand(len(mean_returns.index))
+            random_weights = random_weights/sum(random_weights)
+            p = Portfolio(random_weights, mean_returns, cov_matrix,
+                trading_days, risk_free_rate)
+            x.append(p.std_dev)
+            y.append(p.p_return)
+            hovertext.append(p.__repr__(sep='<br>'))
+            sharpe_ratios.append(p.sharpe_ratio)
+        return x, y, hovertext, sharpe_ratios
 
 class Point:
     name: str
@@ -83,7 +99,7 @@ class Point:
             "width": 3, "color": color}}
         self.hovertext = portfolio.__repr__(sep='<br>')
 
-class Lines:
+class Curve:
     name: str
     mode: str
     x: List[float]
@@ -166,7 +182,7 @@ class FrontierTraces:
     curve: Scatter
     sharpe_ratio_marker: Scatter
     std_dev_marker: Scatter
-    def __init__(self, rand_points: RandomPortfolios, curve: Lines,
+    def __init__(self, rand_points: RandomPortfolios, curve: Curve,
         min_point: Point, max_point: Point) -> None:
         self.rand_portfolios = Scatter(**rand_points.__dict__)
         self.curve = Scatter(**curve.__dict__)
@@ -194,7 +210,7 @@ class EfficientFrontier:
         self.max_sharpe_p = self.predict(max_sharpe=True,
             name='Maximum Sharpe Ratio')
         self.min_risk_p = self.predict(min_risk=True, name='Minimum Risk')
-        self.fig = self.__plot_frontier_curve()
+        self.fig = self.__plot_figure()
     def __repr__(self) -> str:
         res: List= []
         for p in (self.max_sharpe_p,  self.min_risk_p):
@@ -211,34 +227,20 @@ class EfficientFrontier:
             method='SLSQP', bounds=bounds, constraints=constraints)
         return Portfolio(opt_res.x, self.mean_returns, self.cov_matrix,
             self.trading_days, self.risk_free_rate, name=name)
-    def __get_frontier_returns(self, n: int=20) -> NDArray[np.float]:
-        return np.linspace(self.min_risk_p.p_return,
-            self.max_sharpe_p.p_return, n)
-    def __get_frontier_lines(self) -> Tuple[List[float], List[float], 
+    def __get_frontier(self, n: int=20) -> Tuple[List[float], List[float], 
         List[str]]:
         frontier_std_devs, frontier_returns, hover_text = [], [], []
-        for r in self.__get_frontier_returns():
+        for r in np.linspace(self.min_risk_p.p_return,
+            self.max_sharpe_p.p_return, n):
             p = self.predict(target_return=r)
             frontier_std_devs.append(p.std_dev)
             frontier_returns.append(p.p_return)
             hover_text.append(p.__repr__(sep='<br>'))
         return frontier_std_devs, frontier_returns, hover_text
-    def __get_rand_points(self, n = 1500) -> Tuple[List[float], List[float],
-            List[str], List[float]]:
-        x, y, hovertext, sharpe_ratios = [], [], [], []
-        for i in range(n):
-            random_weights = np.random.rand(self.asset_len)
-            random_weights = random_weights/sum(random_weights)
-            p = Portfolio(random_weights, self.mean_returns, self.cov_matrix,
-                self.trading_days, self.risk_free_rate)
-            x.append(p.std_dev)
-            y.append(p.p_return)
-            hovertext.append(p.__repr__(sep='<br>'))
-            sharpe_ratios.append(p.sharpe_ratio)
-        return x, y, hovertext, sharpe_ratios
-    def __plot_frontier_curve(self) -> Figure:
-        data = list(FrontierTraces(RandomPortfolios(*self.__get_rand_points()),
-            Lines(*self.__get_frontier_lines()), Point(self.min_risk_p, 'red'),
+    def __plot_figure(self) -> Figure:
+        data = list(FrontierTraces(RandomPortfolios(self.mean_returns,
+            self.cov_matrix, self.trading_days, self.risk_free_rate),
+            Curve(*self.__get_frontier()), Point(self.min_risk_p, 'red'),
             Point(self.max_sharpe_p, 'black')).__dict__.values())
         layout = Layout(**FrontierLayout(self.trading_days).__dict__)
         return Figure(data=data, layout=layout)

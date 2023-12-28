@@ -62,20 +62,20 @@ class RandomPortfolios:
     mode: str
     name: str
     def __init__(self, mean_returns: pd.Series, cov_matrix: pd.DataFrame,
-        trading_days: int, risk_free_rate: float) -> None:        
+        trading_days: int, risk_free_rate: float, asset_len: int) -> None:
         self.x, self.y, self.hovertext, ratios = self.__get_rand_points(
-            mean_returns, cov_matrix, trading_days, risk_free_rate)
+            mean_returns, cov_matrix, trading_days, risk_free_rate, asset_len)
         self.marker = {"color": ratios, "showscale": True, "size": 7,
             "line":{"width": 1}, "colorscale": "RdGy", "colorbar": {
                 "title":'Sharpe<br>Ratio'}}
         self.mode, self.name = 'markers', 'Random Portfolios'
     def __get_rand_points(self, mean_returns: pd.Series,
         cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float,
-        n: int= 1500) -> Tuple[List[float], List[float],
+        asset_len: int, n: int= 1500) -> Tuple[List[float], List[float],
             List[str], List[float]]:
         x, y, hovertext, sharpe_ratios = [], [], [], []
         for i in range(n):
-            random_weights = np.random.rand(len(mean_returns.index))
+            random_weights = np.random.rand(asset_len)
             random_weights = random_weights/sum(random_weights)
             p = Portfolio(random_weights, mean_returns, cov_matrix,
                 trading_days, risk_free_rate)
@@ -239,8 +239,9 @@ class EfficientFrontier:
         return frontier_std_devs, frontier_returns, hover_text
     def __plot_figure(self) -> Figure:
         data = list(FrontierTraces(RandomPortfolios(self.mean_returns,
-            self.cov_matrix, self.trading_days, self.risk_free_rate),
-            Curve(*self.__get_frontier()), Point(self.min_risk_p, 'red'),
+            self.cov_matrix, self.trading_days, self.risk_free_rate,
+            self.asset_len), Curve(*self.__get_frontier()), Point(
+                self.min_risk_p, 'red'),
             Point(self.max_sharpe_p, 'black')).__dict__.values())
         layout = Layout(**FrontierLayout(self.trading_days).__dict__)
         return Figure(data=data, layout=layout)

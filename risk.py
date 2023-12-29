@@ -157,22 +157,24 @@ class Optimization:
     method: str
     bounds: Tuple[Tuple[float]]
     constraints: Tuple[Dict[str, Union[str, Callable[[NDArray], float]]]]
+    opt_res: OptimizeResult
+    portfolio: Portfolio
     def __init__(self, cov_matrix: pd.DataFrame, trading_days: int,
         mean_returns: pd.Series, risk_free_rate: float, asset_len: int,
         bound: Tuple[float], name: Optional[str], max_sharpe: Optional[bool],
         target_return: Optional[float], target_std_dev: Optional[float]
         ) -> None:
         if (max_sharpe or target_std_dev):
-            self.fun = get_neg_sharpe_ratio
-            self.args = (mean_returns, cov_matrix, trading_days, risk_free_rate)
+            self.fun, self.args = get_neg_sharpe_ratio,  (mean_returns,
+                cov_matrix, trading_days, risk_free_rate)
         else:
-            self.fun = get_std_dev_p
-            self.args = (cov_matrix, trading_days)
+            self.fun, self.args = get_std_dev_p, (cov_matrix, trading_days)
         self.x0, self.method = asset_len*[1/asset_len], 'SLSQP'
         self.bounds = tuple(bound for i in range(asset_len))
         self.constraints = Constraints(mean_returns, cov_matrix, trading_days,
             target_return, target_std_dev).__dict__.values()
-        self.portfolio = Portfolio(minimize(**self.__dict__).x, mean_returns,
+        self.opt_res = minimize(**self.__dict__)
+        self.portfolio = Portfolio(self.opt_res.x, mean_returns,
             cov_matrix, trading_days, risk_free_rate, name=name)
 
 class Traces:

@@ -228,9 +228,7 @@ class EfficientFrontier:
         data = list(Traces(RandPoints(self.mean_returns, self.cov_matrix,
                     self.trading_days, self.risk_free_rate, self.asset_len),
                 Curve(*self.__get_frontier()), Point(self.min_risk_p, 'red'),
-                Point(self.max_sharpe_p, 'black'))
-            .__dict__
-            .values())
+                Point(self.max_sharpe_p, 'black')).__dict__.values())
         layout = Layout(**FrontierLayout(self.trading_days)
             .__dict__)
         return Figure(data=data, layout=layout)

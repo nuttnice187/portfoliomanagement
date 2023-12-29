@@ -112,7 +112,7 @@ class Curve:
         self.line = {"width": 4, "color": 'black', "dash": 'dashdot'}
         self.hovertext = hovertexts
 
-class FrontierLayout:
+class Plot:
     title: str
     yaxis: Dict[str, str]
     xaxis: Dict[str, str]
@@ -132,6 +132,7 @@ class FrontierLayout:
         self.showlegend, self.legend = True, {"orientation": "h",
             "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1}
         self.width, self.height = 800, 600
+        self.layout = Layout(**self.__dict__)
 
 class Constraints:
     weight: Dict[str, Union[str, Callable[[NDArray], float]]]
@@ -182,12 +183,14 @@ class Traces:
     curve: Scatter
     sharpe_ratio_marker: Scatter
     std_dev_marker: Scatter
+    data: List[Scatter]
     def __init__(self, rand_points: RandPoints, curve: Curve,
         min_point: Point, max_point: Point) -> None:
         self.rand_portfolios = Scatter(**rand_points.__dict__)
         self.curve = Scatter(**curve.__dict__)
         self.sharpe_ratio_marker = Scatter(**max_point.__dict__)
         self.std_dev_marker = Scatter(**min_point.__dict__)
+        self.data = list(self.__dict__.values())
 
 class EfficientFrontier:
     mean_returns: pd.Series
@@ -227,12 +230,11 @@ class EfficientFrontier:
             hover_text.append(p.__repr__(sep='<br>'))
         return frontier_std_devs, frontier_returns, hover_text
     def __plot_figure(self) -> Figure:
-        data = list(Traces(RandPoints(self.mean_returns, self.cov_matrix,
-                    self.trading_days, self.risk_free_rate, self.asset_len),
-                Curve(*self.__get_frontier()), Point(self.min_risk_p, 'red'),
-                Point(self.max_sharpe_p, 'black')).__dict__.values())
-        layout = Layout(**FrontierLayout(self.trading_days)
-            .__dict__)
+        data = Traces(RandPoints(self.mean_returns, self.cov_matrix,
+                self.trading_days, self.risk_free_rate, self.asset_len),
+            Curve(*self.__get_frontier()), Point(self.min_risk_p, 'red'),
+            Point(self.max_sharpe_p, 'black')).data
+        layout = Plot(self.trading_days).layout
         return Figure(data=data, layout=layout)
     def predict(self, target_return: Optional[float]=None, 
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,

@@ -53,7 +53,7 @@ class Portfolio:
             res[s] = weight
         return res
 
-class RandomPortfolios:
+class RandPoints:
     x: List[float]
     y: List[float]
     marker: Dict[str, Union[List[float], bool, int, Dict[str, int], str, 
@@ -150,7 +150,7 @@ class Constraints:
                 "fun": lambda x: get_std_dev_p(x, cov_matrix, trading_days
                     ) - target_std_dev}
 
-class OptimizeArgs:
+class Optimization:
     fun: Union[Callable, Callable]
     x0: List[float]
     args: Tuple[Union[pd.Series, pd.DataFrame, int, float]]
@@ -159,7 +159,7 @@ class OptimizeArgs:
     constraints: Tuple[Dict[str, Union[str, Callable[[NDArray], float]]]]
     def __init__(self, cov_matrix: pd.DataFrame, trading_days: int,
         mean_returns: pd.Series, risk_free_rate: float, asset_len: int,
-        bound: Tuple[float], max_sharpe: Optional[bool],
+        bound: Tuple[float], name: Optional[str], max_sharpe: Optional[bool],
         target_return: Optional[float], target_std_dev: Optional[float]
         ) -> None:
         if (max_sharpe or target_std_dev):
@@ -172,13 +172,15 @@ class OptimizeArgs:
         self.bounds = tuple(bound for i in range(asset_len))
         self.constraints = Constraints(mean_returns, cov_matrix, trading_days,
             target_return, target_std_dev).__dict__.values()
+        self.portfolio = Portfolio(minimize(**self.__dict__).x, mean_returns,
+            cov_matrix, trading_days, risk_free_rate, name=name)
 
-class FrontierTraces:
+class Traces:
     rand_portfolios: Scatter
     curve: Scatter
     sharpe_ratio_marker: Scatter
     std_dev_marker: Scatter
-    def __init__(self, rand_points: RandomPortfolios, curve: Curve,
+    def __init__(self, rand_points: RandPoints, curve: Curve,
         min_point: Point, max_point: Point) -> None:
         self.rand_portfolios = Scatter(**rand_points.__dict__)
         self.curve = Scatter(**curve.__dict__)
@@ -215,20 +217,20 @@ class EfficientFrontier:
     def __get_frontier(self, n: int=20) -> Tuple[List[float], List[float], 
         List[str]]:
         frontier_std_devs, frontier_returns, hover_text = [], [], []
-        for r in np.linspace(self.min_risk_p.p_return,
-            self.max_sharpe_p.p_return, n):
+        for r in np.linspace(
+            self.min_risk_p.p_return, self.max_sharpe_p.p_return, n):
             p = self.predict(target_return=r)
             frontier_std_devs.append(p.std_dev)
             frontier_returns.append(p.p_return)
             hover_text.append(p.__repr__(sep='<br>'))
         return frontier_std_devs, frontier_returns, hover_text
     def __plot_figure(self) -> Figure:
-        data = list(FrontierTraces(RandomPortfolios(self.mean_returns, 
-                    self.cov_matrix, self.trading_days, self.risk_free_rate,
-                    self.asset_len),
+        data = list(Traces(RandPoints(self.mean_returns, self.cov_matrix,
+                    self.trading_days, self.risk_free_rate, self.asset_len),
                 Curve(*self.__get_frontier()), Point(self.min_risk_p, 'red'),
                 Point(self.max_sharpe_p, 'black')).__dict__.values())
-        layout = Layout(**FrontierLayout(self.trading_days).__dict__)
+        layout = Layout(**FrontierLayout(self.trading_days)
+            .__dict__)
         return Figure(data=data, layout=layout)
     def predict(self, target_return: Optional[float]=None, 
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
@@ -238,9 +240,6 @@ class EfficientFrontier:
         assert any(options) and not any(options), ' '.join(("Options over",
             "loaded: too many or too few options. Target return, risk should",
             "be greater than zero"))
-        opt_res: OptimizeResult= minimize(**OptimizeArgs(self.cov_matrix,
-                self.trading_days, self.mean_returns, self.risk_free_rate,
-                self.asset_len, self.bound, max_sharpe, target_return,
-                target_std_dev).__dict__)
-        return Portfolio(opt_res.x, self.mean_returns, self.cov_matrix,
-            self.trading_days, self.risk_free_rate, name=name)
+        return Optimization(self.cov_matrix, self.trading_days,
+            self.mean_returns, self.risk_free_rate, self.asset_len, self.bound,
+            name, max_sharpe, target_return, target_std_dev).portfolio

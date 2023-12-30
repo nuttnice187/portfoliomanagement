@@ -120,6 +120,7 @@ class Plot:
     legend: Dict[str, Union[float, str, int]]
     width: int
     height: int
+    layout: Layout
     def __init__(self, trading_days: int) -> None:
         self.title = 'Portfolio Optimization: Risk, Return Simulator'
         if trading_days == 252:
@@ -235,7 +236,7 @@ class EfficientFrontier:
                     self.trading_days, self.risk_free_rate, self.asset_len),
                 Curve(*self.__get_frontier()), Point(self.min_risk_p, 'red'),
                 Point(self.max_sharpe_p, 'black')).data,
-            layout= Plot(self.trading_days).layout)
+            layout=Plot(self.trading_days).layout)
     def predict(self, target_return: Optional[float]=None, 
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
         min_risk: Optional[bool]=None, name: Optional[str]=None) -> Portfolio:

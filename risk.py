@@ -162,9 +162,9 @@ class Optimization:
     portfolio: Portfolio
     def __init__(self, cov_matrix: pd.DataFrame, trading_days: int,
         mean_returns: pd.Series, risk_free_rate: float, asset_len: int,
-        bound: Tuple[float], name: Optional[str], max_sharpe: Optional[bool],
-        target_return: Optional[float], target_std_dev: Optional[float]
-        ) -> None:
+        name: Optional[str], max_sharpe: Optional[bool],
+        target_return: Optional[float], target_std_dev: Optional[float],
+        bound: Tuple[float]=(0, 1)) -> None:
         if (max_sharpe or target_std_dev):
             self.fun, self.args = get_neg_sharpe_ratio,  (mean_returns,
                 cov_matrix, trading_days, risk_free_rate)
@@ -193,7 +193,6 @@ class Traces:
 class TracePlot:
     data: List[Scatter]
     layout: Layout
-    fig: Figure
     def __init__(self, mean_returns: pd.Series, cov_matrix: pd.DataFrame,
         trading_days: int, risk_free_rate: float, asset_len: int,
         frontier: Tuple[List[float], List[float], List[str]],
@@ -203,7 +202,6 @@ class TracePlot:
                 Curve(*frontier), Point(min_risk_p, 'red'),
                 Point(max_sharpe_p, 'black')).__dict__.values())
         self.layout = Layout(**Plot(trading_days).__dict__)
-        self.fig = Figure(**self.__dict__)
 
 class EfficientFrontier:
     mean_returns: pd.Series
@@ -213,22 +211,20 @@ class EfficientFrontier:
     asset_len: int
     max_sharpe_p: Portfolio
     min_risk_p: Portfolio
-    bound: Tuple[float, float]
     fig: Figure
     def __init__(self, adjusted_close: pd.DataFrame, risk_free_rate: float=0.04,
-        bound: Tuple[float, float]=(0, 1), trading_days: int=252) -> None:
+        trading_days: int=252) -> None:
         self.trading_days = trading_days
         self.asset_len = len(adjusted_close.columns)
         percent_change = adjusted_close.pct_change()
         self.mean_returns = percent_change.mean()
         self.cov_matrix = percent_change.cov()
-        self.risk_free_rate, self.bound = risk_free_rate, bound
+        self.risk_free_rate = risk_free_rate
         self.max_sharpe_p = self.predict(max_sharpe=True,
             name='Maximum Sharpe Ratio')
         self.min_risk_p = self.predict(min_risk=True, name='Minimum Risk')
-        self.fig = TracePlot(self.mean_returns, self.cov_matrix,
-            self.trading_days, self.risk_free_rate, self.asset_len,
-            self.__get_frontier(), self.min_risk_p, self.max_sharpe_p).fig
+        self.fig = Figure(**TracePlot(frontier=self.__get_frontier(),
+                **self.__dict__).__dict__)
     def __repr__(self) -> str:
         res: List= []
         for p in (self.max_sharpe_p,  self.min_risk_p):
@@ -253,5 +249,5 @@ class EfficientFrontier:
             "loaded: too many or too few options. Target return, risk should",
             "be greater than zero"))
         return Optimization(self.cov_matrix, self.trading_days,
-            self.mean_returns, self.risk_free_rate, self.asset_len, self.bound,
-            name, max_sharpe, target_return, target_std_dev).portfolio
+            self.mean_returns, self.risk_free_rate, self.asset_len, name,
+            max_sharpe, target_return, target_std_dev).portfolio

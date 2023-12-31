@@ -198,8 +198,8 @@ class TracePlot:
         trading_days: int, risk_free_rate: float, asset_len: int,
         frontier: Tuple[List[float], List[float], List[str]],
         min_risk_p: Portfolio, max_sharpe_p: Portfolio) -> None:
-        self.data = list(Traces(RandPoints(mean_returns, cov_matrix, trading_days,
-                    risk_free_rate, asset_len),
+        self.data = list(Traces(RandPoints(mean_returns, cov_matrix,
+                    trading_days, risk_free_rate, asset_len),
                 Curve(*frontier), Point(min_risk_p, 'red'),
                 Point(max_sharpe_p, 'black')).__dict__.values())
         self.layout = Layout(**Plot(trading_days).__dict__)
@@ -226,7 +226,9 @@ class EfficientFrontier:
         self.max_sharpe_p = self.predict(max_sharpe=True,
             name='Maximum Sharpe Ratio')
         self.min_risk_p = self.predict(min_risk=True, name='Minimum Risk')
-        self.fig = self.__plot_figure()
+        self.fig = TracePlot(self.mean_returns, self.cov_matrix,
+            self.trading_days, self.risk_free_rate, self.asset_len,
+            self.__get_frontier(), self.min_risk_p, self.max_sharpe_p).fig
     def __repr__(self) -> str:
         res: List= []
         for p in (self.max_sharpe_p,  self.min_risk_p):
@@ -242,10 +244,6 @@ class EfficientFrontier:
             frontier_returns.append(p.p_return)
             hover_text.append(p.__repr__(sep='<br>'))
         return frontier_std_devs, frontier_returns, hover_text
-    def __plot_figure(self) -> Figure:
-        return TracePlot(self.mean_returns, self.cov_matrix, self.trading_days,
-            self.risk_free_rate, self.asset_len, self.__get_frontier(),
-            self.min_risk_p, self.max_sharpe_p).fig
     def predict(self, target_return: Optional[float]=None, 
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
         min_risk: Optional[bool]=None, name: Optional[str]=None) -> Portfolio:

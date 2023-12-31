@@ -199,7 +199,8 @@ class TracePlot:
         frontier: Tuple[List[float], List[float], List[str]],
         min_risk_p: Portfolio, max_sharpe_p: Portfolio) -> None:
         self.data = list(Traces(RandPoints(mean_returns, cov_matrix, trading_days,
-            risk_free_rate, asset_len), Curve(*frontier), Point(min_risk_p, 'red'),
+                    risk_free_rate, asset_len),
+                Curve(*frontier), Point(min_risk_p, 'red'),
                 Point(max_sharpe_p, 'black')).__dict__.values())
         self.layout = Layout(**Plot(trading_days).__dict__)
         self.fig = Figure(**self.__dict__)

@@ -133,7 +133,6 @@ class Plot:
         self.showlegend, self.legend = True, {"orientation": "h",
             "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1}
         self.width, self.height = 800, 600
-        self.layout = Layout(**self.__dict__)
 
 class Constraints:
     weight: Dict[str, Union[str, Callable[[NDArray], float]]]
@@ -184,14 +183,26 @@ class Traces:
     curve: Scatter
     sharpe_ratio_marker: Scatter
     std_dev_marker: Scatter
-    data: List[Scatter]
     def __init__(self, rand_points: RandPoints, curve: Curve,
         min_point: Point, max_point: Point) -> None:
         self.rand_portfolios = Scatter(**rand_points.__dict__)
         self.curve = Scatter(**curve.__dict__)
         self.sharpe_ratio_marker = Scatter(**max_point.__dict__)
         self.std_dev_marker = Scatter(**min_point.__dict__)
-        self.data = list(self.__dict__.values())
+
+class TracePlot:
+    data: List[Scatter]
+    layout: Layout
+    fig: Figure
+    def __init__(self, mean_returns: pd.Series, cov_matrix: pd.DataFrame,
+        trading_days: int, risk_free_rate: float, asset_len: int,
+        frontier: Tuple[List[float], List[float], List[str]],
+        min_risk_p: Portfolio, max_sharpe_p: Portfolio) -> None:
+        self.data = list(Traces(RandPoints(mean_returns, cov_matrix, trading_days,
+            risk_free_rate, asset_len), Curve(*frontier), Point(min_risk_p, 'red'),
+                Point(max_sharpe_p, 'black')).__dict__.values())
+        self.layout = Layout(**Plot(trading_days).__dict__)
+        self.fig = Figure(**self.__dict__)
 
 class EfficientFrontier:
     mean_returns: pd.Series
@@ -231,12 +242,9 @@ class EfficientFrontier:
             hover_text.append(p.__repr__(sep='<br>'))
         return frontier_std_devs, frontier_returns, hover_text
     def __plot_figure(self) -> Figure:
-        return Figure(data=Traces(
-                RandPoints(self.mean_returns, self.cov_matrix,
-                    self.trading_days, self.risk_free_rate, self.asset_len),
-                Curve(*self.__get_frontier()), Point(self.min_risk_p, 'red'),
-                Point(self.max_sharpe_p, 'black')).data,
-            layout=Plot(self.trading_days).layout)
+        return TracePlot(self.mean_returns, self.cov_matrix, self.trading_days,
+            self.risk_free_rate, self.asset_len, self.__get_frontier(),
+            self.min_risk_p, self.max_sharpe_p).fig
     def predict(self, target_return: Optional[float]=None, 
         target_std_dev: Optional[float]=None, max_sharpe: Optional[bool]=None,
         min_risk: Optional[bool]=None, name: Optional[str]=None) -> Portfolio:

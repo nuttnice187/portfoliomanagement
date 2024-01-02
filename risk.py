@@ -152,7 +152,10 @@ class Constraints:
                     ) - target_std_dev}
 
 class Optimization:
-    fun: Union[Callable, Callable]
+    fun: Union[
+        Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],
+            float],
+        Callable[[NDArray[np.float64], pd.DataFrame, int], float]]
     x0: List[float]
     args: Tuple[Union[pd.Series, pd.DataFrame, int, float]]
     method: str
@@ -245,9 +248,9 @@ class EfficientFrontier:
         min_risk: Optional[bool]=None, name: Optional[str]=None) -> Portfolio:
         options = iter(
             [max_sharpe, min_risk, (target_return or target_std_dev)])
-        assert any(options) and not any(options), ' '.join(("Options over",
-            "loaded: too many or too few options. Target return, risk should",
-            "be greater than zero"))
+        assert any(options) and not any(options), ' '.join(
+            ("Options over loaded: too many or too few options.",
+            "Target return or risk should be greater than zero, if given."))
         return Optimization(self.cov_matrix, self.trading_days,
             self.mean_returns, self.risk_free_rate, self.asset_len, name,
             max_sharpe, target_return, target_std_dev).portfolio

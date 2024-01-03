@@ -156,8 +156,9 @@ class Optimization:
         Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],
             float],
         Callable[[NDArray[np.float64], pd.DataFrame, int], float]]
+    args: Union[Tuple[pd.Series, pd.DataFrame, int, float],
+        Tuple[pd.DataFrame, int]]
     x0: List[float]
-    args: Tuple[Union[pd.Series, pd.DataFrame, int, float]]
     method: str
     bounds: Tuple[Tuple[float]]
     constraints: Tuple[Dict[str, Union[str, Callable[[NDArray], float]]]]

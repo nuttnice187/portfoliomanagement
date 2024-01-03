@@ -196,6 +196,7 @@ class Traces:
 class TracePlot:
     data: List[Scatter]
     layout: Layout
+    fig: Figure
     def __init__(self, mean_returns: pd.Series, cov_matrix: pd.DataFrame,
         trading_days: int, risk_free_rate: float, asset_len: int,
         frontier: Tuple[List[float], List[float], List[str]],
@@ -205,6 +206,7 @@ class TracePlot:
                 Curve(*frontier), Point(min_risk_p, 'red'),
                 Point(max_sharpe_p, 'black')).__dict__.values())
         self.layout = Layout(**Plot(trading_days).__dict__)
+        self.fig = Figure(**self.__dict__)
 
 class EfficientFrontier:
     mean_returns: pd.Series
@@ -223,11 +225,11 @@ class EfficientFrontier:
         self.mean_returns = percent_change.mean()
         self.cov_matrix = percent_change.cov()
         self.risk_free_rate = risk_free_rate
-        self.max_sharpe_p = self.predict(max_sharpe=True,
-            name='Maximum Sharpe Ratio')
+        self.max_sharpe_p = self.predict(
+            max_sharpe=True, name='Maximum Sharpe Ratio')
         self.min_risk_p = self.predict(min_risk=True, name='Minimum Risk')
-        self.fig = Figure(**TracePlot(frontier=self.__get_frontier(),
-                **self.__dict__).__dict__)
+        self.fig = TracePlot(
+            frontier=self.__get_frontier(), **self.__dict__).fig
     def __repr__(self) -> str:
         res: List= []
         for p in (self.max_sharpe_p,  self.min_risk_p):

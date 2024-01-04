@@ -133,6 +133,7 @@ class Plot:
         self.showlegend, self.legend = True, {"orientation": "h",
             "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1}
         self.width, self.height = 800, 600
+        self.layout = Layout(**self.__dict__)
 
 class Constraints:
     weight: Dict[str, Union[str, Callable[[NDArray], float]]]
@@ -156,8 +157,9 @@ class Optimization:
         Callable[[NDArray[np.float64], pd.Series, pd.DataFrame, int, float],
             float],
         Callable[[NDArray[np.float64], pd.DataFrame, int], float]]
+    args: Union[Tuple[pd.Series, pd.DataFrame, int, float],
+        Tuple[pd.DataFrame, int]]
     x0: List[float]
-    args: Tuple[Union[pd.Series, pd.DataFrame, int, float]]
     method: str
     bounds: Tuple[Tuple[float]]
     constraints: Tuple[Dict[str, Union[str, Callable[[NDArray], float]]]]
@@ -205,7 +207,7 @@ class TracePlot:
                     trading_days, risk_free_rate, asset_len),
                 Curve(*frontier), Point(min_risk_p, 'red'),
                 Point(max_sharpe_p, 'black')).__dict__.values())
-        self.layout = Layout(**Plot(trading_days).__dict__)
+        self.layout = Plot(trading_days).layout
         self.fig = Figure(**self.__dict__)
 
 class EfficientFrontier:

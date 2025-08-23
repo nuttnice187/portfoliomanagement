@@ -2,6 +2,23 @@ import pandas as pd
 
 from typing import Tuple, List
 from yfinance import download
+
+
+def count_consecutive_same_color(df: pd.DataFrame, color_col: str) -> pd.DataFrame:
+    """Counts consecutive days with the same candle color."""
+    count = 0
+    color_streak = []
+    for i in range(len(df)):
+        if i == 0:
+            count = 0
+        elif df[color_col].iloc[i] == df[color_col].iloc[i-1] and df[color_col].iloc[i] != '':
+            count += 1
+        else:
+            count = 0
+        color_streak.append(count)
+    df['{}_streak'.format(color_col.split('_')[0])] = color_streak
+    return df
+    
     
 def get_close_prices(symbol: str, prices: pd.DataFrame) -> pd.DataFrame:
     close_prices = prices['Close'].reset_index()

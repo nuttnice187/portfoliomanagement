@@ -64,9 +64,7 @@ def get_symbols(*symbols: str) -> List[str]:
     for symbol in symbols:
         prices = download(symbol, period='1y', multi_level_index=False)
         close_prices = get_close_prices(symbol, prices)
-
         symbol_markov = get_symbol_markov(symbol, close_prices)
-
         prediction_row = get_prediction_row(symbol_markov, close_prices, symbol)
 
         if not prediction_row.empty:

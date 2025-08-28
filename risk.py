@@ -56,7 +56,7 @@ class Portfolio:
             '    Sharpe Ratio: {:.4}'.format(self.sharpe_ratio),
             '    Weight Allocation:'))
         for k, v in self.get_weight_allocation().items():
-            if v > 0:
+            if v > 0.00:
                 res.append('        {}: {:.2%}'.format(k, v))
         return sep.join(res)
         

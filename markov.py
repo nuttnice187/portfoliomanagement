@@ -62,7 +62,7 @@ def get_symbols(*symbols: str) -> List[str]:
     """
     result = []
     for symbol in symbols:
-        prices = download(symbol, period='2y', multi_level_index=False)
+        prices = download(symbol, period='4y', multi_level_index=False)
         close_prices = get_close_prices(symbol, prices)
 
         symbol_markov = get_symbol_markov(symbol, close_prices)

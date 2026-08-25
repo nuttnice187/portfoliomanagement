@@ -56,7 +56,7 @@ class Portfolio:
             '    Sharpe Ratio: {:.4}'.format(self.sharpe_ratio),
             '    Weight Allocation:'))
         for k, v in self.get_weight_allocation().items():
-            if v > 0.00:
+            if v >= 0.01:
                 res.append('        {}: {:.2%}'.format(k, v))
         return sep.join(res)
         
@@ -157,6 +157,7 @@ class Plot:
         self.showlegend, self.legend = True, {"orientation": "h",
             "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1}
         self.width, self.height = 800, 600
+        self.hovermode='closest'
         self.layout = Layout(**self.__dict__)
 
 

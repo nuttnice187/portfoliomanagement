@@ -118,7 +118,6 @@ class Point:
         self.marker = {"color": 'white', "size": 14, "line": {
             "width": 3, "color": color}}
         self.hovertext = portfolio.__repr__(sep='<br>')
-        self.hovermode = 'closest'
 
 
 class Curve:

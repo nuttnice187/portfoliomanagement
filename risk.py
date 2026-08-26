@@ -85,7 +85,7 @@ class RandPoints:
         self.marker = {"color": ratios, "showscale": True, "size": 7,
             "line":{"width": 1}, "colorscale": "RdGy", "colorbar": {
                 "title":'Sharpe<br>Ratio'}}
-        self.mode, self.name = 'markers', 'Random Portfolios'
+        self.mode, self.name, self.hovermode = 'markers', 'Random Portfolios', 'closest'
             
     def __get_rand_points(self, mean_returns: pd.Series,
         cov_matrix: pd.DataFrame, trading_days: int, risk_free_rate: float,
@@ -118,6 +118,7 @@ class Point:
         self.marker = {"color": 'white', "size": 14, "line": {
             "width": 3, "color": color}}
         self.hovertext = portfolio.__repr__(sep='<br>')
+        self.hovermode = 'closest'
 
 
 class Curve:
